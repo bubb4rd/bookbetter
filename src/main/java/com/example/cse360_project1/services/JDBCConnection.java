@@ -4,6 +4,7 @@ import com.example.cse360_project1.*;
 import com.example.cse360_project1.controllers.SceneController;
 import com.example.cse360_project1.controllers.UserSettingsPage;
 import com.example.cse360_project1.models.Book;
+import com.example.cse360_project1.models.Transaction;
 import com.example.cse360_project1.models.User;
 import javafx.scene.image.Image;
 
@@ -119,9 +120,9 @@ public class JDBCConnection {
         }
         return false;
     }
-    public boolean bookCollectionExists(Book book) {
+    public boolean bookCollectionExists(int id) {
         try (Connection newConnection = getConnection()) {
-            String checkCollection = "SELECT COUNT(*) FROM book_collections WHERE user_id = " + book.getCollectionID();
+            String checkCollection = "SELECT * FROM book_collections WHERE user_id = " + id;
             this.result = fetchQuery(checkCollection);
             if (result.next()) return true;
         } catch (Exception e) {
@@ -130,15 +131,19 @@ public class JDBCConnection {
         return false;
     };
     public boolean addBook(Book book) {
+
         int results = -1;
         try {
             // Check if user has a book collection associated with their ID else create one
-            if (!bookCollectionExists(book)) {
+            System.out.println(book.getCollectionID());
+            if (!bookCollectionExists(book.getCollectionID())) {
                 updateQuery("INSERT INTO book_collections (user_id) VALUE (" + book.getCollectionID() + ")");
             }
+
             if (book.getImage() == null) results = updateQuery("INSERT INTO books (collection_id, book_author, book_name, book_condition, book_categories) VALUES ('" + book.getCollectionID() + "', '" + book.getAuthor() + "', " + book.getCondition() + ", '" + book.getCategories() + "')");
             else {
-                String query = "INSERT INTO books (collection_id, book_author, book_name, book_condition, book_categories, book_image) VALUES (?, ?, ?, ?, CAST(? AS JSON), ?)";
+                String query = "INSERT INTO books (collection_id, book_author, book_name, book_condition, book_categories, book_image) " +
+                        "VALUES ((SELECT collection_id FROM book_collections WHERE user_id = ?), ?, ?, ?, CAST(? AS JSON), ?)";
                 try (Connection currentConnection = getConnection()) {
 
                     FileInputStream inputStream = new FileInputStream(book.getImage());
@@ -160,6 +165,26 @@ public class JDBCConnection {
             e.printStackTrace();
         }
         return false;
+    }
+    public User getUser(String username) throws SQLException {
+        fetchQuery("SELECT * FROM users WHERE username=" + username);
+        if (result.next()) {
+            String pass = result.getString("password");
+            int id = result.getInt("id");
+            String type = result.getString("type");
+            return new User(id, username, type, pass);
+        }
+        return null;
+    }
+    public User getUser(int id) throws SQLException {
+        fetchQuery("SELECT * FROM users WHERE id=" + id);
+        if (result.next()) {
+            String pass = result.getString("password");
+            String username = result.getString("username");
+            String type = result.getString("type");
+            return new User(id, username, type, pass);
+        }
+        return null;
     }
     public Book getBook(int id) {
         try {
@@ -217,4 +242,14 @@ public class JDBCConnection {
         }
         return books;
     }
+//    public ArrayList<Transaction> getAllTransactions(ArrayList<Book> books, User user) {
+//        ArrayList<Transaction> transactions = new ArrayList<>();
+//        for (Book book : books) {
+//            if (book.getBuyer_id() == -1) {
+//                Transaction transaction = new Transaction(book, user);
+//            } else {
+//                Transaction transaction = new Transaction(book, user, );
+//            }
+//        }
+//    }
 }

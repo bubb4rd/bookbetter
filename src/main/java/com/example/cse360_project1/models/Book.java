@@ -6,6 +6,7 @@ import java.util.ArrayList;
 
 public class Book {
     private int id;
+    private int buyer_id;
     private String name;
     private String author;
     private String condition;
@@ -14,6 +15,7 @@ public class Book {
     private double price;
     private File image;
     private String date;
+
     public Book(int id, String name, String author, String condition, String categoiesJSON, int collectionID) {
         LocalDate today = LocalDate.now();
         this.date = today.toString();
@@ -24,7 +26,24 @@ public class Book {
         this.categories = parseJSON(categoiesJSON);
         this.collectionID = collectionID;
         this.image = null;
-
+        this.buyer_id = -1;
+        switch (condition) {
+            case "New" -> this.price = 10.50 * 2;
+            case "Used" -> this.price = 10.50 * 1.5;
+            case "Heavily Used" -> this.price = 10.50;
+        }
+    }
+    public Book(String name, String author, String condition, String categoiesJSON, int collectionID, File image) {
+        LocalDate today = LocalDate.now();
+        this.date = today.toString();
+        this.id = id;
+        this.name = name;
+        this.author = author;
+        this.condition = condition;
+        this.categories = parseJSON(categoiesJSON);
+        this.collectionID = collectionID;
+        this.image = image;
+        this.buyer_id = -1;
         switch (condition) {
             case "New" -> this.price = 10.50 * 2;
             case "Used" -> this.price = 10.50 * 1.5;
@@ -41,7 +60,7 @@ public class Book {
         this.image = image;
         LocalDate today = LocalDate.now();
         this.date = today.toString();
-
+        this.buyer_id = -1;
         switch (condition) {
             case "New" -> this.price = 10.50 * 2;
             case "Used" -> this.price = 10.50 * 1.5;
@@ -105,6 +124,13 @@ public class Book {
     public void setCollectionID(int collectionID) {
         this.collectionID = collectionID;
     }
+    public int getBuyer_id() {
+        return buyer_id;
+    }
+    public void setBuyer_id(int buyer_id) {
+        this.buyer_id = buyer_id;
+    }
+
     public ArrayList<String> parseJSON(String json) {
 
         String trimmed = json.substring(1, json.length() - 1);

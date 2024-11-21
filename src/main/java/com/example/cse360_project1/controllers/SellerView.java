@@ -329,14 +329,14 @@ public class SellerView {
            String bookAuthor = authorNameInput.getText();
            String bookCondition = conditionCombo.getValue();
            String bookCategories = Arrays.toString(selectedCategories.toArray());
-           if (bookName.isEmpty() || bookAuthor.isEmpty() || bookCondition.isEmpty() || bookCategories.isEmpty() || bookCondition.equals("Choose Account Type")) {
+           if (bookName.isEmpty() || bookAuthor.isEmpty()  || bookCategories.isEmpty() || bookCondition.equals("Choose Account Type")) {
                Error emptyFieldError = new Error("Submit error: One or more empty field");
                emptyFieldError.displayError(pane, mainScene);
            } else if (imageFile.get() == null) {
                Error imageError = new Error("Submit error: Image failed");
                imageError.displayError(pane, mainScene);
            } else {
-               Book newBook = new Book(user.getId(), bookName, bookAuthor, bookCondition, bookCategories, user.getId(), imageFile.get());
+               Book newBook = new Book(bookName, bookAuthor, bookCondition, bookCategories, user.getId(), imageFile.get());
                JDBCConnection connection = new JDBCConnection();
                if (connection.addBook(newBook)) {
                    System.out.println("Book added: " + newBook.getName());

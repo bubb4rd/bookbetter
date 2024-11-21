@@ -40,6 +40,7 @@ public class Transaction {
         this.status = status;
         this.price = book.getPrice();
     }
+
     public int getId() {
         return id;
     }
