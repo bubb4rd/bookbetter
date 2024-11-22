@@ -178,7 +178,7 @@ public class Book {
     }
     @Override
     public String toString() {
-        return name + ", $" + price + " " + author + " " + condition + " " + stringCategories(categories);
+        return name + ", " + author + ", " + price;
     }
 
 }

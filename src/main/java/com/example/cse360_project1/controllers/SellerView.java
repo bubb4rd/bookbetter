@@ -97,54 +97,7 @@ public class SellerView {
         return hBox;
     }
 
-    public VBox getAllOrders(User user) {
-        VBox orderVBox = new VBox();
-
-        return orderVBox;
-    }
-
-    public AnchorPane getDashboard(Scene mainScene) {
-        AnchorPane pane = new AnchorPane();
-        Label titleLabel = new Label("Hey " + user.getName() + ",");
-        titleLabel.getStyleClass().add("h1");
-        titleLabel.setPadding(new Insets(20, 20, 20, 20));
-        Label subtitleLabel = new Label("Track and manage your orders");
-
-        VBox totalRevenue = new VBox();
-        totalRevenue.getStyleClass().add("blurb");
-        totalRevenue.getStyleClass().add("mini");
-        totalRevenue.setSpacing(20);
-
-        Label totalRevenueLabel = new Label("Total Revenue");
-        totalRevenueLabel.getStyleClass().add("h2");
-        totalRevenue.setPadding(new Insets(20, 20, 20, 20));
-
-        Label errorLabel = new Label("No data found.");
-        errorLabel.getStyleClass().add("text-lg");
-
-        totalRevenue.getChildren().addAll(totalRevenueLabel, errorLabel);
-
-
-        VBox recentOrders = new VBox();
-        recentOrders.getStyleClass().add("blurb");
-        recentOrders.getStyleClass().add("wide");
-        recentOrders.setPadding(new Insets(20, 20, 20, 20));
-        Label recentOrdersLabel = new Label("Recent Orders");
-        recentOrdersLabel.getStyleClass().add("h2");
-
-        Button viewAllButton = new Button("View All");
-        viewAllButton.getStyleClass().add("secondary");
-        viewAllButton.setPadding(new Insets(10, 15, 10, 15));
-        viewAllButton.setOnAction(e -> {
-            this.tab = "TRANSACTIONS";
-            sceneController.switchScene(getScene());
-        });
-
-        HBox headerBox = new HBox();
-        headerBox.setPadding(new Insets(0, 0, 10, 0));
-        Region spacer = new Region();
-        HBox.setHgrow(spacer, Priority.ALWAYS);
-        headerBox.getChildren().addAll(recentOrdersLabel, spacer, viewAllButton);
+    public TableView<Transaction> getAllOrders(User user) {
         TableView<Transaction> tableView = new TableView<>();
         tableView.setStyle("fx-background-color: #fff");
         tableView.setEditable(false);
@@ -199,8 +152,53 @@ public class SellerView {
         );
 
         tableView.setItems(transactions);
+        return tableView;
+    }
+
+    public AnchorPane getDashboard(Scene mainScene) {
+        AnchorPane pane = new AnchorPane();
+        Label titleLabel = new Label("Hey " + user.getName() + ",");
+        titleLabel.getStyleClass().add("h1");
+        titleLabel.setPadding(new Insets(20, 20, 20, 20));
+        Label subtitleLabel = new Label("Track and manage your orders");
+
+        VBox totalRevenue = new VBox();
+        totalRevenue.getStyleClass().add("blurb");
+        totalRevenue.getStyleClass().add("mini");
+        totalRevenue.setSpacing(20);
+
+        Label totalRevenueLabel = new Label("Total Revenue");
+        totalRevenueLabel.getStyleClass().add("h2");
+        totalRevenue.setPadding(new Insets(20, 20, 20, 20));
+
+        Label errorLabel = new Label("No data found.");
+        errorLabel.getStyleClass().add("text-lg");
+
+        totalRevenue.getChildren().addAll(totalRevenueLabel, errorLabel);
 
 
+        VBox recentOrders = new VBox();
+        recentOrders.getStyleClass().add("blurb");
+        recentOrders.getStyleClass().add("wide");
+        recentOrders.setPadding(new Insets(20, 20, 20, 20));
+        Label recentOrdersLabel = new Label("Recent Orders");
+        recentOrdersLabel.getStyleClass().add("h2");
+
+        Button viewAllButton = new Button("View All");
+        viewAllButton.getStyleClass().add("secondary");
+        viewAllButton.setPadding(new Insets(10, 15, 10, 15));
+        viewAllButton.setOnAction(e -> {
+            this.tab = "TRANSACTIONS";
+            sceneController.switchScene(getScene());
+        });
+
+        HBox headerBox = new HBox();
+        headerBox.setPadding(new Insets(0, 0, 10, 0));
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        headerBox.getChildren().addAll(recentOrdersLabel, spacer, viewAllButton);
+
+        TableView<Transaction> tableView = getAllOrders(user);
         recentOrders.getChildren().addAll(headerBox, tableView);
 
 
