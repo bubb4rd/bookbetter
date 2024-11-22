@@ -142,8 +142,8 @@ public class JDBCConnection {
 
             if (book.getImage() == null) results = updateQuery("INSERT INTO books (collection_id, book_author, book_name, book_condition, book_categories) VALUES ('" + book.getCollectionID() + "', '" + book.getAuthor() + "', " + book.getCondition() + ", '" + book.getCategories() + "')");
             else {
-                String query = "INSERT INTO books (collection_id, book_author, book_name, book_condition, book_categories, book_image) " +
-                        "VALUES ((SELECT collection_id FROM book_collections WHERE user_id = ?), ?, ?, ?, CAST(? AS JSON), ?)";
+                String query = "INSERT INTO books (collection_id, book_author, book_name, book_condition, book_categories, book_image, date) " +
+                        "VALUES ((SELECT collection_id FROM book_collections WHERE user_id = ?), ?, ?, ?, CAST(? AS JSON), ?, ?)";
                 try (Connection currentConnection = getConnection()) {
 
                     FileInputStream inputStream = new FileInputStream(book.getImage());
@@ -154,6 +154,7 @@ public class JDBCConnection {
                     preparedStatement.setString(4, book.getCondition());
                     preparedStatement.setString(5, book.categoriesToJSON(book.getCategories()));
                     preparedStatement.setBinaryStream(6, inputStream, (int) book.getImage().length());
+                    preparedStatement.setString(7, book.getDate());
                     System.out.println(preparedStatement);
                     int newRowsInserted = preparedStatement.executeUpdate();
                     if (newRowsInserted > 0) return true;
@@ -233,7 +234,7 @@ public class JDBCConnection {
                 String book_name = result.getString("book_name");
                 String book_author = result.getString("book_author");
                 String book_condition = result.getString("book_condition");
-                String categories = result.getString("categories");
+                String categories = result.getString("book_categories");
                 Book book = new Book(book_id, book_name, book_author, book_condition, categories, collection_id);
                 books.add(book);
             }
@@ -242,14 +243,30 @@ public class JDBCConnection {
         }
         return books;
     }
-//    public ArrayList<Transaction> getAllTransactions(ArrayList<Book> books, User user) {
-//        ArrayList<Transaction> transactions = new ArrayList<>();
-//        for (Book book : books) {
-//            if (book.getBuyer_id() == -1) {
-//                Transaction transaction = new Transaction(book, user);
-//            } else {
-//                Transaction transaction = new Transaction(book, user, );
-//            }
-//        }
-//    }
+    public ArrayList<Transaction> getAllTransactions(User user)  {
+        ArrayList<Transaction> transactions = new ArrayList<>();
+        try(Connection connection = getConnection()) {
+            PreparedStatement preparedStatement = connection.prepareStatement("SELECT * FROM books WHERE collection_id=" + user.getId());
+            ResultSet resultSet = preparedStatement.executeQuery();
+            while (resultSet.next()) {
+                int book_id = resultSet.getInt("book_id");
+                int collection_id = resultSet.getInt("collection_id");
+                String book_name = resultSet.getString("book_name");
+                String book_author = resultSet.getString("book_author");
+                String book_condition = resultSet.getString("book_condition");
+                String categories = resultSet.getString("book_categories");
+                String status = resultSet.getString("book_status");
+
+                int buyer_id = resultSet.getInt("buyer_id");
+                String date = resultSet.getString("date");
+                Book book = new Book(book_id, book_name, book_author, book_condition, categories, collection_id);
+                transactions.add(new Transaction(book_id, user, getUser(buyer_id), date, book, status));
+            }
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+        return transactions;
+
+    }
 }

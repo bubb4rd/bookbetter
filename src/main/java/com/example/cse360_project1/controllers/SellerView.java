@@ -5,6 +5,7 @@ import com.example.cse360_project1.models.Error;
 import com.example.cse360_project1.models.Transaction;
 import com.example.cse360_project1.models.User;
 import com.example.cse360_project1.services.JDBCConnection;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
@@ -14,6 +15,7 @@ import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.chart.PieChart;
 import javafx.scene.control.*;
+import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.*;
 import javafx.stage.FileChooser;
 
@@ -63,6 +65,8 @@ public class SellerView {
                 return getListBook(mainScene);
             case "TRANSACTIONS":
                 return getTransactions(mainScene);
+            case "EDIT LISTINGS":
+                return getEditListings(mainScene);
             case "LIST_SUCCESS":
                 return getListBookSuccess();
             default:
@@ -138,25 +142,66 @@ public class SellerView {
 
         HBox headerBox = new HBox();
         headerBox.setPadding(new Insets(0, 0, 10, 0));
-        // Keep gap in between
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
         headerBox.getChildren().addAll(recentOrdersLabel, spacer, viewAllButton);
-
-        TableView orderTable = new TableView();
-
-        orderTable.setEditable(false);
-        orderTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
-        TableColumn dateColumn = new TableColumn("Date");
-        TableColumn orderNumColumn = new TableColumn("Order num");
-        TableColumn bookNameColumn = new TableColumn("Book name");
-        TableColumn statusColumn = new TableColumn("Status");
-        TableColumn priceColumn = new TableColumn("Price");
-
+        TableView<Transaction> tableView = new TableView<>();
+        tableView.setStyle("fx-background-color: #fff");
+        tableView.setEditable(false);
+        tableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         ObservableList<Transaction> data = FXCollections.observableArrayList();
-        orderTable.getColumns().addAll(dateColumn, orderNumColumn, bookNameColumn, statusColumn, priceColumn);
 
-        recentOrders.getChildren().addAll(headerBox, orderTable);
+        TableColumn<Transaction, String> dateColumn = new TableColumn<>("Date");
+        dateColumn.setCellValueFactory(new PropertyValueFactory<>("date"));
+
+        TableColumn<Transaction, Integer> idColumn = new TableColumn<>("Transaction ID");
+        idColumn.setCellValueFactory(new PropertyValueFactory<>("id"));
+
+        TableColumn<Transaction, String> bookNameColumn = new TableColumn<>("Book Name");
+        bookNameColumn.setCellValueFactory(param -> {
+            return new SimpleStringProperty(param.getValue().getBook().getName());
+        });
+
+        TableColumn<Transaction, String> statusColumn = new TableColumn<>("Status");
+        statusColumn.setCellValueFactory(new PropertyValueFactory<>("status"));
+
+        TableColumn<Transaction, Double> priceColumn = new TableColumn<>("Price");
+        priceColumn.setCellValueFactory(new PropertyValueFactory<>("price"));
+
+        TableColumn<Transaction, Void> actionCol = new TableColumn<>("Action");
+
+        actionCol.setCellFactory(param -> new TableCell<>() {
+            private final Button actionButton = new Button("View");
+
+            {
+                actionButton.setOnAction(event -> {
+                    Transaction transaction = getTableView().getItems().get(getIndex());
+                    System.out.println("Processing transaction: " + transaction.getId());
+                });
+            }
+
+            @Override
+            protected void updateItem(Void item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty) {
+                    setGraphic(null);
+                } else {
+                    setGraphic(actionButton);
+                }
+            }
+        });
+
+        tableView.getColumns().addAll(dateColumn, idColumn, bookNameColumn, statusColumn, priceColumn, actionCol);
+
+        JDBCConnection connection = new JDBCConnection();
+        ObservableList<Transaction> transactions = FXCollections.observableArrayList(
+                connection.getAllTransactions(user)
+        );
+
+        tableView.setItems(transactions);
+
+
+        recentOrders.getChildren().addAll(headerBox, tableView);
 
 
         pane.getChildren().addAll(titleLabel, subtitleLabel, totalRevenue, recentOrders);

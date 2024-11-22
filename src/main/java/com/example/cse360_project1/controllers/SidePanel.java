@@ -45,6 +45,8 @@ public class SidePanel {
             if (selectDefault("BookBetter - Login")) dashboard.getStyleClass().add("selected");
             Button list = new Button("List a book");
             list.getStyleClass().add("sidepanel-button");
+            Button editListing = new Button("Edit listing");
+            editListing.getStyleClass().add("sidepanel-button");
             Button transactions = new Button("Transactions");
             transactions.getStyleClass().add("sidepanel-button");
 
