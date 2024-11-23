@@ -491,7 +491,8 @@ public class SellerView {
                 }
             });
 
-            contentBox.getChildren().addAll(selectBookLabel, bookListView, editButton, detailsForm);
+            bookListBox.getChildren().addAll(selectBookLabel, bookListView, editButton);
+            bookListBox.getChildren().add(detailsForm); // Add the form to the layout
         }
 
         HBox mainContentBox = new HBox(20);
