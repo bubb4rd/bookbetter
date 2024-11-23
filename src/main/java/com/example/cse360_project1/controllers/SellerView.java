@@ -244,7 +244,6 @@ public class SellerView {
                 newPriceLabel.setText("Calculated Price: Invalid Base Price");
             }
         });
-
         Button chooseImageButton = new Button("Choose Image + ");
         chooseImageButton.getStyleClass().add("secondary");
         chooseImageButton.setPrefWidth(150);
