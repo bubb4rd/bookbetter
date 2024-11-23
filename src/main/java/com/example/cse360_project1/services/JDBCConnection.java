@@ -121,7 +121,7 @@ public class JDBCConnection {
     }
     public boolean bookCollectionExists(Book book) {
         try (Connection newConnection = getConnection()) {
-            String checkCollection = "SELECT COUNT(*) FROM book_collections WHERE user_id = " + book.getCollectionID();
+            String checkCollection = "SELECT * FROM book_collections WHERE collection_id = " + book.getCollectionID();
             this.result = fetchQuery(checkCollection);
             if (result.next()) return true;
         } catch (Exception e) {
