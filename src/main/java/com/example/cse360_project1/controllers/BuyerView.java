@@ -272,9 +272,9 @@ public class BuyerView {
         buttons.getChildren().addAll(clearBag, confirm);
 
         ArrayList<Book> books = new ArrayList<Book>();
-        Book book1 = new Book(1, "Up", "Me", "Heavily used ", "Fiction", 3);
-        Book book2 = new Book(2, "Diary of a Wimpy Kid", "IDK", "Lightly used", "Fiction", 3);
-        Book book3 = new Book(3, "Magic Treehouse", "Not sure", "Moderately used", "Fiction", 3);
+        Book book1 = new Book(1, "Up", "Me", "Heavily Used", "Fiction", 3);
+        Book book2 = new Book(2, "Diary of a Wimpy Kid", "IDK", "Lightly Used", "Fiction", 3);
+        Book book3 = new Book(3, "Magic Treehouse", "Not sure", "Moderately Used", "Fiction", 3);
         books.add(book1);
         books.add(book2);
         books.add(book3);
