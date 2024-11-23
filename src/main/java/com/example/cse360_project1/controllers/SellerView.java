@@ -240,7 +240,7 @@ public class SellerView {
                 double ogPrice = Double.parseDouble(ogPriceText);
                 double newPrice = calculateNewPrice(ogPrice, conditionValue);
                 newPriceLabel.setText(String.format("Calculated Price: $%.2f", newPrice));
-            } catch (NumberFormatException ex) {
+            } catch (Exception ex) {
                 newPriceLabel.setText("Calculated Price: Invalid Base Price");
             }
         });
