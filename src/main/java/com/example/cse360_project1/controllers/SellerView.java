@@ -204,14 +204,34 @@ public class SellerView {
         Label conditionNameLabel = new Label("Condition");
         conditionNameLabel.getStyleClass().add("h3");
 
+        Label ogPriceLabel = new Label("Original Book Price: ");
+        ogPriceLabel.getStyleClass().add("h3");
+
+        TextField ogPriceInput = new TextField();
+        ogPriceInput.setPromptText("Enter the original book price (e.g., 11.99)");
+        ogPriceInput.getStyleClass().addAll("gray-border", "text-lg", "input");
+
         HBox condition = new HBox();
         condition.setSpacing(10);
         ComboBox<String> conditionCombo = new ComboBox();
         conditionCombo.getStyleClass().addAll("gray-border", "text-lg", "input");
-
-
         conditionCombo.setValue("Choose Book Condition");
         conditionCombo.getItems().addAll("Lightly used", "Moderately used", "Heavily used ");
+        conditionCombo.getItems().addAll("Lightly Used", "Moderately Used", "Heavily Used ");
+
+        Label newPriceLabel = new Label("Calculated Price: $0.00");
+        conditionCombo.setOnAction(e -> {
+            try{
+                String ogPriceText = ogPriceInput.getText().trim();
+                System.out.println("Original Price Input: " + ogPriceText);
+                double ogPrice = Double.parseDouble(ogPriceInput.getText());
+                String conditionValue = conditionCombo.getValue();
+                double newPrice = calculateNewPrice(ogPrice, conditionValue);
+                newPriceLabel.setText(String.format("Calculated Price: $%.2f", newPrice));
+            } catch (NumberFormatException ex) {
+                newPriceLabel.setText("Calculated Price: Invalid Base Price");
+            }
+        });
 
         Button chooseImageButton = new Button("Choose Image + ");
         chooseImageButton.getStyleClass().add("secondary");
@@ -308,8 +328,8 @@ public class SellerView {
         pane.getStylesheets().add(css);
 
         submitButton.setOnAction(e -> {
-           String bookName = bookNameInput.getText();
-           String bookAuthor = authorNameInput.getText();
+           String bookName = bookNameInput.getText().trim();
+           String bookAuthor = authorNameInput.getText().trim();
            String bookCondition = conditionCombo.getValue();
            String bookCategories = Arrays.toString(selectedCategories.toArray());
            String ogPriceText = ogPriceInput.getText().trim();
@@ -364,50 +384,180 @@ public class SellerView {
         }
     }
 
-        HBox submitArea = new HBox();
-        submitArea.setPadding(new Insets(20, 20, 20, 20));
-        Region spacerLeft =  new Region();
-        HBox.setHgrow(spacerLeft, Priority.ALWAYS);
-        Region spacerRight =  new Region();
-        HBox.setHgrow(spacerRight, Priority.ALWAYS);
-        submitArea.getChildren().addAll(spacerLeft, submitButton, spacerRight);
-        listBlurb.getChildren().addAll(bookNameVBox, author, conditionContainer, categories, submitArea);
 
-        pane.getChildren().addAll(titleLabel, subtitleLabel, listBlurb);
-        String css = getClass().getResource("/com/example/cse360_project1/css/SellerView.css").toExternalForm();
-        AnchorPane.setTopAnchor(titleLabel, 30.0);
-        AnchorPane.setLeftAnchor(titleLabel, 50.0);
-        AnchorPane.setTopAnchor(subtitleLabel, 75.0);
-        AnchorPane.setLeftAnchor(subtitleLabel, 50.0);
 
-        AnchorPane.setTopAnchor(listBlurb, 120.0);
-        AnchorPane.setLeftAnchor(listBlurb, 50.0);
-        pane.getStylesheets().add(css);
 
-        submitButton.setOnAction(e -> {
-           String bookName = bookNameInput.getText();
-           String bookAuthor = authorNameInput.getText();
-           String bookCondition = conditionCombo.getValue();
-           String bookCategories = Arrays.toString(selectedCategories.toArray());
-           if (bookName.isEmpty() || bookAuthor.isEmpty() || bookCondition.isEmpty() || bookCategories.isEmpty() || bookCondition.equals("Choose Book Condition")) {
-               Error emptyFieldError = new Error("Submit error: One or more empty field");
-               emptyFieldError.displayError(pane, mainScene);
-           } else if (imageFile.get() == null) {
-               Error imageError = new Error("Submit error: Image failed");
-               imageError.displayError(pane, mainScene);
-           } else {
-               Book newBook = new Book(user.getId(), bookName, bookAuthor, bookCondition, bookCategories, user.getId(), imageFile.get());
-               JDBCConnection connection = new JDBCConnection();
-               if (connection.addBook(newBook)) {
-                   System.out.println("Book added: " + newBook.getName());
-
-                   this.tab = "LIST_SUCCESS";
-                   sceneController.switchScene(getScene());
-               }
-           }
-        });
-        return pane;
-    }
+//    public AnchorPane getEditBook(Scene mainScene, String name, String author, String condition, ArrayList<String> categories) {
+//        AnchorPane pane = new AnchorPane();
+//        Label titleLabel = new Label("List a Book");
+//        titleLabel.getStyleClass().add("h1");
+//        titleLabel.setPadding(new Insets(20, 20, 20, 20));
+//
+//        Label subtitleLabel = new Label("Sell a new book.");
+//
+//        VBox listBlurb = new VBox();
+//        listBlurb.getStyleClass().add("blurb");
+//        listBlurb.getStyleClass().add("tall");
+//        listBlurb.setSpacing(10.0);
+//        listBlurb.setPadding(new Insets(20, 20, 20, 20));
+//
+//        VBox bookNameVBox = new VBox();
+//        bookNameVBox.setSpacing(4.0);
+//
+//        Label bookNameLabel = new Label("Book Name");
+//        bookNameLabel.getStyleClass().add("h3");
+//
+//        TextField bookNameInput = new TextField();
+//        bookNameInput.setPromptText("Enter a book name");
+//        bookNameInput.getStyleClass().addAll("gray-border", "text-lg", "input");
+//
+//        bookNameVBox.getChildren().addAll(bookNameLabel, bookNameInput);
+//
+//        VBox author = new VBox();
+//        author.setSpacing(4.0);
+//
+//        Label authorNameLabel = new Label("Author");
+//        authorNameLabel.getStyleClass().add("h3");
+//
+//        TextField authorNameInput = new TextField();
+//        authorNameInput.setPromptText("Enter the author name");
+//        authorNameInput.getStyleClass().addAll("gray-border", "text-lg", "input");
+//
+//        author.getChildren().addAll(authorNameLabel, authorNameInput);
+//
+//        VBox conditionContainer = new VBox();
+//        conditionContainer.setSpacing(4.0);
+//
+//        Label conditionNameLabel = new Label("Condition");
+//        conditionNameLabel.getStyleClass().add("h3");
+//
+//        HBox condition = new HBox();
+//        condition.setSpacing(10);
+//        ComboBox<String> conditionCombo = new ComboBox();
+//        conditionCombo.getStyleClass().addAll("gray-border", "text-lg", "input");
+//
+//
+//        conditionCombo.setValue("Choose Book Condition");
+//        conditionCombo.getItems().addAll("Lightly used", "Moderately used", "Heavily used ");
+//
+//        Button chooseImageButton = new Button("Choose Image + ");
+//        chooseImageButton.getStyleClass().add("secondary");
+//        chooseImageButton.setPrefWidth(150);
+//        chooseImageButton.setPrefHeight(60);
+//
+//        AtomicReference<File> imageFile = new AtomicReference<>();
+//        chooseImageButton.setOnAction(e -> {
+//            FileChooser imageChooser = new FileChooser();
+//            imageChooser.getExtensionFilters().addAll(
+//                    new FileChooser.ExtensionFilter("Image Files", "*.jpg", "*.png")
+//            );
+//            imageFile.set(imageChooser.showOpenDialog(sceneController.getStage()));
+//            if (imageFile.get() != null) {
+//                chooseImageButton.setText(imageFile.get().getName());
+//            }
+//        });
+//
+//
+//        condition.getChildren().addAll((Node) conditionCombo, chooseImageButton);
+//        conditionContainer.getChildren().addAll(conditionNameLabel, condition);
+//        ArrayList<ToggleButton> allCategories = new ArrayList<>();
+//        ArrayList<String> selectedCategories = new ArrayList<>();
+//        ToggleButton natScienceButton = new ToggleButton("Natural Science");
+//        natScienceButton.getStyleClass().add("toggle-button");
+//        allCategories.add(natScienceButton);
+//        ToggleButton computerButton = new ToggleButton("Computer");
+//        computerButton.getStyleClass().add("toggle-button");
+//        allCategories.add(computerButton);
+//
+//        ToggleButton mathButton = new ToggleButton("Math");
+//        mathButton.getStyleClass().add("toggle-button");
+//        allCategories.add(mathButton);
+//
+//        ToggleButton englishLangButton = new ToggleButton("English Language");
+//        englishLangButton.getStyleClass().add("toggle-button");
+//        allCategories.add(englishLangButton);
+//
+//        ToggleButton scifiButton = new ToggleButton("Sci-Fi");
+//        scifiButton.getStyleClass().add("toggle-button");
+//        allCategories.add(scifiButton);
+//
+//        ToggleButton artButton = new ToggleButton("Art");
+//        artButton.getStyleClass().add("toggle-button");
+//        allCategories.add(artButton);
+//
+//        ToggleButton novelButton = new ToggleButton("Novel");
+//        novelButton.getStyleClass().add("toggle-button");
+//        allCategories.add(novelButton);
+//
+//        for (ToggleButton button: allCategories) {
+//            button.setOnAction(e -> {
+//                if (button.isSelected()) {
+//                    selectedCategories.add(button.getText());
+//                }
+//                else {
+//                    selectedCategories.remove(button.getText());
+//
+//                }
+//            });
+//        }
+//        VBox categories = new VBox();
+//        categories.setSpacing(5);
+//        Label categoriesLabel = new Label("Categories");
+//        categoriesLabel.getStyleClass().add("h3");
+//        HBox categoriesBox1 = new HBox(10, natScienceButton, computerButton);
+//        HBox categoriesBox2 = new HBox(10, mathButton, englishLangButton);
+//        HBox categoriesBox3 = new HBox(10, scifiButton, artButton, novelButton);
+//        categories.getChildren().addAll(categoriesLabel, categoriesBox1, categoriesBox2, categoriesBox3);
+//
+//        Button submitButton = new Button("List your book");
+//        submitButton.getStyleClass().add("h3");
+//        submitButton.getStyleClass().add("button");
+//        submitButton.setStyle("-fx-pref-width: 300px; -fx-background-color: #640000; -fx-text-fill: white; -fx-pref-height: 50px;");
+//
+//        HBox submitArea = new HBox();
+//        submitArea.setPadding(new Insets(20, 20, 20, 20));
+//        Region spacerLeft =  new Region();
+//        HBox.setHgrow(spacerLeft, Priority.ALWAYS);
+//        Region spacerRight =  new Region();
+//        HBox.setHgrow(spacerRight, Priority.ALWAYS);
+//        submitArea.getChildren().addAll(spacerLeft, submitButton, spacerRight);
+//        listBlurb.getChildren().addAll(bookNameVBox, author, conditionContainer, categories, submitArea);
+//
+//        pane.getChildren().addAll(titleLabel, subtitleLabel, listBlurb);
+//        String css = getClass().getResource("/com/example/cse360_project1/css/SellerView.css").toExternalForm();
+//        AnchorPane.setTopAnchor(titleLabel, 30.0);
+//        AnchorPane.setLeftAnchor(titleLabel, 50.0);
+//        AnchorPane.setTopAnchor(subtitleLabel, 75.0);
+//        AnchorPane.setLeftAnchor(subtitleLabel, 50.0);
+//
+//        AnchorPane.setTopAnchor(listBlurb, 120.0);
+//        AnchorPane.setLeftAnchor(listBlurb, 50.0);
+//        pane.getStylesheets().add(css);
+//
+//        submitButton.setOnAction(e -> {
+//           String bookName = bookNameInput.getText();
+//           String bookAuthor = authorNameInput.getText();
+//           String bookCondition = conditionCombo.getValue();
+//           String bookCategories = Arrays.toString(selectedCategories.toArray());
+//           if (bookName.isEmpty() || bookAuthor.isEmpty() || bookCondition.isEmpty() || bookCategories.isEmpty() || bookCondition.equals("Choose Book Condition")) {
+//               Error emptyFieldError = new Error("Submit error: One or more empty field");
+//               emptyFieldError.displayError(pane, mainScene);
+//           } else if (imageFile.get() == null) {
+//               Error imageError = new Error("Submit error: Image failed");
+//               imageError.displayError(pane, mainScene);
+//           } else {
+//               Book newBook = new Book(user.getId(), bookName, bookAuthor, bookCondition, bookCategories, user.getId(), imageFile.get());
+//               JDBCConnection connection = new JDBCConnection();
+//               if (connection.addBook(newBook)) {
+//                   System.out.println("Book added: " + newBook.getName());
+//
+//                   this.tab = "LIST_SUCCESS";
+//                   sceneController.switchScene(getScene());
+//               }
+//           }
+//        });
+//        return pane;
+//    }
 
     public AnchorPane getListBookSuccess() {
         AnchorPane pane = new AnchorPane();
