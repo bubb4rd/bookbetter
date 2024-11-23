@@ -340,6 +340,7 @@ public class SellerView {
            } else if (imageFile.get() == null) {
                Error imageError = new Error("Submit error: Image failed");
                imageError.displayError(pane, mainScene);
+               return;
            } else {
                try {
 
