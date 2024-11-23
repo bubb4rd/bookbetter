@@ -485,9 +485,9 @@ public class SellerView {
                 if (selectedBook == null) {
                     Error noSelectionError = new Error("Please select a book to edit.");
                     noSelectionError.displayError(pane, mainScene);
-                }
-                else{
-                    populatedEditForm(detailsForm, selectedBook, jdbcConnection);
+                } else {
+                    detailsForm.setVisible(true);
+                    populatedEditForm(pane, detailsForm, selectedBook, jdbcConnection);
                 }
             });
 
