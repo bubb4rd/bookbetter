@@ -205,20 +205,20 @@ public class JDBCConnection {
                 createStatement.setInt(1, book.getCollectionID());
                 createStatement.executeUpdate();
 
-                    // Retrieve the generated collection_id
-                    ResultSet generatedKeys = createStatement.getGeneratedKeys();
-                    if (generatedKeys.next()) {
-                        collectionId = generatedKeys.getInt(1);
-                        System.out.println("Created new collection_id: " + collectionId);
-                    } else {
-                        System.err.println("Failed to create a new collection_id.");
-                        return false;
-                    }
+                // Retrieve the generated collection_id
+                ResultSet generatedKeys = createStatement.getGeneratedKeys();
+                if (generatedKeys.next()) {
+                    collectionId = generatedKeys.getInt(1);
+                    System.out.println("Created new collection_id: " + collectionId);
                 } else {
-                    // If multiple collection_ids exist, delete all but the first
-                    collectionId = collectionIds.get(0); // Keep the first (smallest) collection_id
-                    for (int i = 1; i < collectionIds.size(); i++) {
-                        int collectionIdToDelete = collectionIds.get(i);
+                    System.err.println("Failed to create a new collection_id.");
+                    return false;
+                }
+            } else {
+                // If multiple collection_ids exist, delete all but the first
+                collectionId = collectionIds.get(0); // Keep the first (smallest) collection_id
+                for (int i = 1; i < collectionIds.size(); i++) {
+                    int collectionIdToDelete = collectionIds.get(i);
 
                         // Check if the collection_id is referenced in the books table
                         String referenceCheckQuery = "SELECT COUNT(*) FROM books WHERE collection_id = ?";
