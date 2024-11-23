@@ -12,6 +12,7 @@ import javafx.scene.layout.VBox;
 public class SupportPage {
     private User user;
     private final SceneController sceneController;
+
     public SupportPage(User user, SceneController sceneController) {
         this.sceneController = sceneController;
         this.user = user;
