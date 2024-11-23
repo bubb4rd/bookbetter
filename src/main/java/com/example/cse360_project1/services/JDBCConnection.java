@@ -239,31 +239,20 @@ public class JDBCConnection {
                 }
             }
 
-            // Check for a valid image file
-            File imageFile = book.getImage();
-            if (imageFile == null || !imageFile.exists() || !imageFile.isFile()) {
-                System.err.println("Book image file is null, does not exist, or is not a valid file. Skipping image upload.");
-                return false;
-            }
-
-            try (FileInputStream fileInputStream = new FileInputStream(imageFile)) {
-                String query = "INSERT INTO books (collection_id, book_author, book_name, book_condition, book_categories, book_image, date, calculated_price) " +
-                        "VALUES (?, ?, ?, ?, CAST(? AS JSON), ?, ?, ?)";
-                PreparedStatement preparedStatement = currentConnection.prepareStatement(query);
-                preparedStatement.setInt(1, collectionId);
-                preparedStatement.setString(2, book.getAuthor());
-                preparedStatement.setString(3, book.getName());
-                preparedStatement.setString(4, book.getCondition());
-                preparedStatement.setString(5, book.categoriesToJSON(book.getCategories()));
-                preparedStatement.setBinaryStream(6, fileInputStream, (int) imageFile.length());
-                preparedStatement.setString(7, book.getDate());
-                preparedStatement.setDouble(8, book.getPrice());
-                cacheManager.clear(ALL_BOOKS_CACHE_KEY);
-                return preparedStatement.executeUpdate() > 0;
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        } catch (SQLException e) {
+            // Insert the book with the determined collection_id
+            String query = "INSERT INTO books (collection_id, book_author, book_name, book_condition, book_categories, book_image, date) " +
+                    "VALUES (?, ?, ?, ?, CAST(? AS JSON), ?, ?)";
+            PreparedStatement preparedStatement = currentConnection.prepareStatement(query);
+            preparedStatement.setInt(1, collectionId);
+            preparedStatement.setString(2, book.getAuthor());
+            preparedStatement.setString(3, book.getName());
+            preparedStatement.setString(4, book.getCondition());
+            preparedStatement.setString(5, book.categoriesToJSON(book.getCategories()));
+            preparedStatement.setBinaryStream(6, new FileInputStream(book.getImage()), (int) book.getImage().length());
+            preparedStatement.setString(7, book.getDate());
+            cacheManager.clear(ALL_BOOKS_CACHE_KEY);
+            return preparedStatement.executeUpdate() > 0;
+        } catch (SQLException | FileNotFoundException e) {
             e.printStackTrace();
             return false;
         }
