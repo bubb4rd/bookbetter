@@ -190,10 +190,10 @@ public class JDBCConnection {
                 checkStatement.setInt(1, book.getCollectionID()); // Assuming book.getCollectionID() returns the user_id
                 ResultSet rs = checkStatement.executeQuery();
 
-                List<Integer> collectionIds = new ArrayList<>();
-                while (rs.next()) {
-                    collectionIds.add(rs.getInt("collection_id"));
-                }
+            List<Integer> collectionIds = new ArrayList<>();
+            while (rs.next()) {
+                collectionIds.add(rs.getInt("collection_id"));
+            }
 
             // Handle case where no collection_id exists
             int collectionId;
