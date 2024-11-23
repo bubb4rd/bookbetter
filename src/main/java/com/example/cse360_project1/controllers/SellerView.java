@@ -337,6 +337,7 @@ public class SellerView {
            if (bookName.isEmpty() || bookAuthor.isEmpty() || bookCondition.isEmpty() || bookCategories.isEmpty() || bookCondition.equals("Choose Book Condition") || !isValidDouble(ogPriceText)){
                Error emptyFieldError = new Error("Submit error: Fill in all fields and original price must be valid decimal");
                emptyFieldError.displayError(pane, mainScene);
+               return;
            } else if (imageFile.get() == null) {
                Error imageError = new Error("Submit error: Image failed");
                imageError.displayError(pane, mainScene);
