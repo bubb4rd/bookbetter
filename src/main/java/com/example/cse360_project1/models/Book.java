@@ -147,6 +147,15 @@ public class Book {
         jsonBuilder.append("]");
         return jsonBuilder.toString();
     }
+
+    public double getOgPrice() {
+        return ogPrice;
+    }
+
+    public void setOgPrice(double ogPrice) {
+        this.ogPrice = ogPrice;
+    }
+
     public double getPrice() {
         return price;
     }
