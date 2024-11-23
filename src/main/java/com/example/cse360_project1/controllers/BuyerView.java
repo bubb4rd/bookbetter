@@ -299,7 +299,7 @@ public class BuyerView {
             bookTitles.getChildren().add(title);
             bookConditions.getChildren().add(condition);
             bookPrice.getChildren().add(price);
-            if (condition.equals("Heavily used ")){
+            if (condition.equals("Heavily Used")){
 
             }
         }
