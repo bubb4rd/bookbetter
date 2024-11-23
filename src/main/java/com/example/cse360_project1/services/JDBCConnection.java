@@ -16,9 +16,7 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.image.Image;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.io.*;
 import java.sql.DriverManager;
 import java.sql.*;
 import java.util.ArrayList;
@@ -88,6 +86,48 @@ public class JDBCConnection {
         return null;
     }
     public User registerUser(String username, String password, String type) {
+
+        String fetchIDQuery = "SELECT id FROM users ORDER BY id";
+        int newUserID = 1;
+        Connection newConnection;
+        try {
+            newConnection = getConnection();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
+        try (PreparedStatement fetchIDStatement = newConnection.prepareStatement(fetchIDQuery)) {
+            ResultSet newResult = fetchIDStatement.executeQuery();
+
+            while(newResult.next()){
+                int initialID = newResult.getInt("id");
+
+                if(initialID != newUserID){
+                    break;
+                }
+
+                newUserID++;
+            }
+
+            String insertUserQuery = "INSERT INTO users (id, username, password, type) VALUES (?, ?, ?, ?)";
+
+            try (PreparedStatement insertUserStatement = connection.prepareStatement(insertUserQuery)) {
+                insertUserStatement.setInt(1, newUserID);
+                insertUserStatement.setString(2, username);
+                insertUserStatement.setString(3, password);
+                insertUserStatement.setString(4, type);
+                insertUserStatement.executeUpdate();
+            }
+
+            User newUser = new User(newUserID, username, type, password);
+            return newUser;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+
+        /*
         try {
             ResultSet getUserIds = fetchQuery("SELECT * FROM users");
              int newUserId = 0;
@@ -106,6 +146,7 @@ public class JDBCConnection {
             e.printStackTrace();
         }
         return null;
+        */
     }
 
     public boolean uploadImage(File image, int id)  {
@@ -491,6 +532,7 @@ public class JDBCConnection {
             deleteStatement.setInt(1, userID); //set the parameters of the statement, more specifically which user to delete
 
             int numOfRowsAffected = deleteStatement.executeUpdate(); //execute the delete and show how many rows have been affected by deleting the user (should be just 1)
+            invalidateCache();
 
             return numOfRowsAffected > 0; //return true if at least one row has been impacted
         } catch (Exception e) {
@@ -510,5 +552,41 @@ public class JDBCConnection {
             e.printStackTrace();
         }
         return false;
+    }
+
+    public File fetchBookImage(int bookId) {
+        final String query = "SELECT book_image FROM books WHERE book_id = ?";
+
+        try (Connection connection = getConnection();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+
+            statement.setInt(1, bookId);
+            ResultSet resultSet = statement.executeQuery();
+
+            if (resultSet.next()) {
+                InputStream inputStream = resultSet.getBinaryStream("book_image");
+
+                if (inputStream != null) {
+                    File tempFile = File.createTempFile("book_image_" + bookId, ".jpg");
+                    try (FileOutputStream outputStream = new FileOutputStream(tempFile)) {
+                        byte[] buffer = new byte[1024];
+                        int bytesRead;
+                        while ((bytesRead = inputStream.read(buffer)) != -1) {
+                            outputStream.write(buffer, 0, bytesRead);
+                        }
+                    }
+                    return tempFile; // Return the image file
+                } else {
+                    System.out.println("No binary data found for book ID: " + bookId);
+                }
+            } else {
+                System.out.println("No result found for book ID: " + bookId);
+            }
+
+        } catch (SQLException | IOException e) {
+            System.err.println("Error retrieving image for book ID " + bookId + ": " + e.getMessage());
+        }
+
+        return null; // Return null if no image is found or on error
     }
 }
