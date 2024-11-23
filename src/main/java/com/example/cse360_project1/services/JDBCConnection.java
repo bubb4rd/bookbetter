@@ -240,8 +240,8 @@ public class JDBCConnection {
             }
 
             // Insert the book with the determined collection_id
-            String query = "INSERT INTO books (collection_id, book_author, book_name, book_condition, book_categories, book_image, date) " +
-                    "VALUES (?, ?, ?, ?, CAST(? AS JSON), ?, ?)";
+            String query = "INSERT INTO books (collection_id, book_author, book_name, book_condition, book_categories, book_image, date, calculated_price) " +
+                    "VALUES (?, ?, ?, ?, CAST(? AS JSON), ?, ?, ?)";
             PreparedStatement preparedStatement = currentConnection.prepareStatement(query);
             preparedStatement.setInt(1, collectionId);
             preparedStatement.setString(2, book.getAuthor());
