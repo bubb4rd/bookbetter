@@ -255,7 +255,7 @@ public class JDBCConnection {
                 preparedStatement.setString(3, book.getName());
                 preparedStatement.setString(4, book.getCondition());
                 preparedStatement.setString(5, book.categoriesToJSON(book.getCategories()));
-                preparedStatement.setBinaryStream(6, new FileInputStream(book.getImage()), (int) book.getImage().length());
+                preparedStatement.setBinaryStream(6, fileInputStream, (int) imageFile.length());
                 preparedStatement.setString(7, book.getDate());
                 cacheManager.clear(ALL_BOOKS_CACHE_KEY);
                 return preparedStatement.executeUpdate() > 0;
