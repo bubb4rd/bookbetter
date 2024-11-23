@@ -525,7 +525,7 @@ public class SellerView {
         Label conditionLabel = new Label("Book Condition:");
         bookNameLabel.getStyleClass().add("h3");
         ComboBox<String> conditionComboBox = new ComboBox<>();
-        conditionComboBox.getItems().addAll("Lightly used", "moderately used", "Heavily used");
+        conditionComboBox.getItems().addAll("Lightly used", "Moderately used", "Heavily used");
         conditionComboBox.setValue(book.getCondition());
         conditionComboBox.getStyleClass().addAll("gray-border", "input");
     }
