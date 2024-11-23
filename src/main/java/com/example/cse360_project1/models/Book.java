@@ -151,6 +151,10 @@ public class Book {
         return price;
     }
 
+    public void setPrice(double price) {
+        this.price = price;
+    }
+
     public ObservableList<Book> getPendingBooks() throws SQLException {
 
         ObservableList<Book> books = FXCollections.observableArrayList();
