@@ -312,8 +312,10 @@ public class SellerView {
            String bookAuthor = authorNameInput.getText();
            String bookCondition = conditionCombo.getValue();
            String bookCategories = Arrays.toString(selectedCategories.toArray());
-           if (bookName.isEmpty() || bookAuthor.isEmpty() || bookCondition.isEmpty() || bookCategories.isEmpty() || bookCondition.equals("Choose Book Condition")) {
-               Error emptyFieldError = new Error("Submit error: One or more empty field");
+           String ogPriceText = ogPriceInput.getText().trim();
+
+           if (bookName.isEmpty() || bookAuthor.isEmpty() || bookCondition.isEmpty() || bookCategories.isEmpty() || bookCondition.equals("Choose Book Condition") || !isValidDouble(ogPriceText)){
+               Error emptyFieldError = new Error("Submit error: Fill in all fields and original price must be valid decimal");
                emptyFieldError.displayError(pane, mainScene);
            } else if (imageFile.get() == null) {
                Error imageError = new Error("Submit error: Image failed");
