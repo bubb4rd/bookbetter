@@ -226,18 +226,18 @@ public class JDBCConnection {
                     referenceCheckStatement.setInt(1, collectionIdToDelete);
                     ResultSet referenceResult = referenceCheckStatement.executeQuery();
 
-                        if (referenceResult.next() && referenceResult.getInt(1) == 0) {
-                            // Safe to delete if not referenced
-                            String deleteQuery = "DELETE FROM book_collections WHERE collection_id = ?";
-                            PreparedStatement deleteStatement = currentConnection.prepareStatement(deleteQuery);
-                            deleteStatement.setInt(1, collectionIdToDelete);
-                            deleteStatement.executeUpdate();
-                            System.out.println("Deleted collection_id: " + collectionIdToDelete);
-                        } else {
-                            System.out.println("collection_id " + collectionIdToDelete + " is referenced in the books table and cannot be deleted.");
-                        }
+                    if (referenceResult.next() && referenceResult.getInt(1) == 0) {
+                        // Safe to delete if not referenced
+                        String deleteQuery = "DELETE FROM book_collections WHERE collection_id = ?";
+                        PreparedStatement deleteStatement = currentConnection.prepareStatement(deleteQuery);
+                        deleteStatement.setInt(1, collectionIdToDelete);
+                        deleteStatement.executeUpdate();
+                        System.out.println("Deleted collection_id: " + collectionIdToDelete);
+                    } else {
+                        System.out.println("collection_id " + collectionIdToDelete + " is referenced in the books table and cannot be deleted.");
                     }
                 }
+            }
 
                 // Insert the book with the determined collection_id
                 String query = "INSERT INTO books (collection_id, book_author, book_name, book_condition, book_categories, book_image, date) " +
