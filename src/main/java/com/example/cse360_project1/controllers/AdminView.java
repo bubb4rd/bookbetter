@@ -1,9 +1,10 @@
 package com.example.cse360_project1.controllers;
 
 import com.example.cse360_project1.models.Book;
+import com.example.cse360_project1.models.Transaction;
 import com.example.cse360_project1.models.User;
 import com.example.cse360_project1.services.JDBCConnection;
-import com.mysql.cj.xdevapi.Table;
+import com.example.cse360_project1.services.SimpleCache;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -33,11 +34,13 @@ public class AdminView {
     private final User user;
     private final SceneController sceneController;
     private String tab;
-
+    private static final SimpleCache cacheManager = SimpleCache.getInstance();
     private TableView<User> allUsersTable; //create a private users table
     private TableView<Book> allBooksTable; //create a private books table
     private TableView<Book> pendingBooksTable;
-
+    private static final String USERS_CACHE_KEY = "admin_users";
+    private static final String BOOKS_CACHE_KEY = "admin_books";
+    private static final String TRANSACTIONS_CACHE_KEY = "admin_transactions";
     public AdminView(User user, SceneController sceneController) {
         this.user = user;
         this.sceneController = sceneController;
@@ -88,7 +91,7 @@ public class AdminView {
         titleLabel.setPadding(new Insets(20, 20, 20, 20));
         Label subtitleLabel = new Label("Track and manage all Pending Book Listings");
 
-        List<Book> pendingBooksList;
+        ObservableList<Book> pendingBooksList;
 
         //Create a new book table with only pending books in the table
         try{
@@ -96,11 +99,11 @@ public class AdminView {
             pendingBooksList = pendingBooks.getPendingBooks();
         } catch (SQLException e) {
             e.printStackTrace();
-            pendingBooksList = new ArrayList<>();
+            pendingBooksList = FXCollections.observableArrayList();
         }
 
         //instantiate the new table for pending books
-        pendingBooksTable = createBookTable(pendingBooksList);
+        pendingBooksTable = createBookTable((ObservableList<Book>) pendingBooksList);
         pendingBooksTable.setPrefWidth(600);
         pendingBooksTable.setPrefHeight(500);
         pendingBooksTable.setEditable(false);
@@ -173,13 +176,17 @@ public class AdminView {
         titleLabel.getStyleClass().add("h1");
         titleLabel.setPadding(new Insets(20, 20, 20, 20));
         Label subtitleLabel = new Label("Manage all book orders");
-
-        pane.getChildren().addAll(titleLabel, subtitleLabel);
+        TableView<Transaction> tableView = JDBCConnection.getTransactionTable(user);
+        tableView.setPrefWidth(1000);
+        tableView.setPrefHeight(650);
+        pane.getChildren().addAll(titleLabel, subtitleLabel, tableView);
         String css = getClass().getResource("/com/example/cse360_project1/css/UserSettings.css").toExternalForm();
         AnchorPane.setTopAnchor(titleLabel, 30.0);
         AnchorPane.setLeftAnchor(titleLabel, 50.0);
         AnchorPane.setTopAnchor(subtitleLabel, 75.0);
         AnchorPane.setLeftAnchor(subtitleLabel, 50.0);
+        AnchorPane.setLeftAnchor(tableView, 50.0);
+        AnchorPane.setTopAnchor(tableView, 120.0);
         pane.getStylesheets().add(css);
         return pane;
     }
@@ -195,7 +202,7 @@ public class AdminView {
 
         try{
             User allUsers = new User(0, "allUsers", "admin", "1234"); //create a new temporary user
-            allUsersList = allUsers.getAllUsers(); //get all users from the system database
+            allUsersList = allUsers.getAllUsers(cacheManager, USERS_CACHE_KEY); //get all users from the system database
         } catch (SQLException e) { //check for any errors when getting all users in the system
             e.printStackTrace();
             allUsersList = new ArrayList<>();
@@ -229,16 +236,7 @@ public class AdminView {
         titleLabel.setPadding(new Insets(20, 20, 20, 20));
         Label subtitleLabel = new Label("View and manage books");
 
-        List<Book> allBooksList;
-
-        //allow the admin user to see all books in the system as long as their status is either active or pending
-        try{
-            Book allBooks = new Book(0, "temp", "temp", "temp", "temp", 1);
-            allBooksList = allBooks.getAllBooks();
-        } catch (SQLException e) {
-            e.printStackTrace();
-            allBooksList = new ArrayList<>();
-        }
+        ObservableList<Book> allBooksList = JDBCConnection.fetchAllBooksFromDatabase();
 
         allBooksTable = createBookTable(allBooksList);
         allBooksTable.setPrefWidth(600);
@@ -259,7 +257,8 @@ public class AdminView {
     }
 
     //Create the Book Table for all books currently in the system
-    private TableView<Book> createBookTable(List<Book> allBookList){
+    private TableView<Book> createBookTable(ObservableList<Book> allBookList){
+
         TableView<Book> bookTableView = new TableView<>();
 
         TableColumn<Book, Integer> bookIdColumn = new TableColumn<>("Book ID");
@@ -559,7 +558,7 @@ public class AdminView {
 
         try {
             User tempUser = new User(0, "allUsers", "admin", "1234");
-            updatedUsersList = tempUser.getAllUsers(); //create a new temp user to get all users from the database after removal
+            updatedUsersList = tempUser.getAllUsers(cacheManager, USERS_CACHE_KEY); //create a new temp user to get all users from the database after removal
         } catch (SQLException e) { //show an error that getting all users was unsuccessful
             e.printStackTrace();
             updatedUsersList = new ArrayList<>();
@@ -570,7 +569,9 @@ public class AdminView {
             allUsersTable.getItems().addAll(updatedUsersList); //update the table with the updated users in the system after removal
         }
     }
-
+    private void invalidateUsersCache() {
+        cacheManager.clear(USERS_CACHE_KEY);
+    }
     //Ensure that once a book is accepted into the system, the pending listings table is adjusted
     private void refreshPendingBooksTable(){
         List<Book> updatedPendingBooksList;

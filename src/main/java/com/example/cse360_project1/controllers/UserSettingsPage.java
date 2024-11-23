@@ -1,10 +1,13 @@
 package com.example.cse360_project1.controllers;
 
+import com.example.cse360_project1.models.Error;
 import com.example.cse360_project1.models.User;
+import com.example.cse360_project1.services.JDBCConnection;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
@@ -99,7 +102,8 @@ public class UserSettingsPage {
         Label actionBlurbLabel = new Label("Action Center");
         actionBlurbLabel.getStyleClass().add("h2");
 
-
+        TextField changePasswordField = new TextField();
+        changePasswordField.setEditable(false);
         Label changePasswordLabel = new Label("Change password");
         changePasswordLabel.getStyleClass().add("blurb-text");
         changePasswordLabel.getStyleClass().add("gray");
@@ -119,7 +123,7 @@ public class UserSettingsPage {
         deleteAccountButton.setPrefHeight(35);
         deleteAccountButton.getStyleClass().add("secondary");
 
-        actionBlurb.getChildren().addAll(actionBlurbLabel, changePasswordLabel, changePasswordButton, deleteAccountLabel, deleteAccountButton);
+        actionBlurb.getChildren().addAll(actionBlurbLabel, changePasswordField, changePasswordLabel, changePasswordButton, deleteAccountLabel, deleteAccountButton);
         pane.getChildren().addAll(accountSettingsLabel, personalBlurb, actionBlurb);
         String css = getClass().getResource("/com/example/cse360_project1/css/UserSettings.css").toExternalForm();
         AnchorPane.setTopAnchor(personalBlurb, 110.0);
@@ -130,6 +134,39 @@ public class UserSettingsPage {
         AnchorPane.setLeftAnchor(accountSettingsLabel, 50.0);
         AnchorPane.setLeftAnchor(personalBlurb, 50.0);
         pane.getStylesheets().add(css);
+
+        deleteAccountButton.setOnAction(e -> {
+            JDBCConnection connection = new JDBCConnection();
+            if (connection.deleteUser(user.getId())) {
+                LoginRegisterPage loginRegisterPage = new LoginRegisterPage(sceneController);
+                sceneController.switchScene(loginRegisterPage.getScene(sceneController.getCurrentScene()));
+            }
+        });
+
+        changePasswordButton.setOnAction(e -> {
+            if (!changePasswordField.isEditable()) {
+                changePasswordField.setEditable(true);
+            }
+
+            if (changePasswordField.isEditable()) {
+                if (changePasswordField.getText().equals("")) {
+                    Error noNewPassword = new Error("Password error: No new password entered");
+                    noNewPassword.displayError(pane, sceneController.getCurrentScene());
+                } else if (changePasswordField.getText().equals(user.getPassword())) {
+                    Error samePassword = new Error("Password error: Same password");
+                    samePassword.displayError(pane, sceneController.getCurrentScene());
+                } else {
+                    JDBCConnection connection = new JDBCConnection();
+                    if (connection.changePassword(user, changePasswordField.getText())) {
+                        SellerView sellerView = new SellerView(user, sceneController);
+                        sceneController.switchScene(sellerView.getScene());
+                    } else {
+                        Error deleteError = new Error("Error changing password");
+                        deleteError.displayError(pane, sceneController.getCurrentScene());
+                    }
+                }
+            }
+        });
         return pane;
     }
 }

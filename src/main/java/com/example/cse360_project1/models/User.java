@@ -1,5 +1,7 @@
 package com.example.cse360_project1.models;
 
+import com.example.cse360_project1.services.SimpleCache;
+
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -87,19 +89,29 @@ public class User {
     }
 
     //get all users in the system database and put them into an array list of users
-    public List<User> getAllUsers() throws SQLException{
+    public List<User> getAllUsers(SimpleCache cacheManager, String cacheKey) throws SQLException{
+        List<User> cachedUsers = (List<User>) cacheManager.get(cacheKey);
+        if (cachedUsers != null) {
+            return cachedUsers;
+        }
+
+        // If not in cache, fetch from database
         List<User> users = new ArrayList<>();
-        Connection connection =  DriverManager.getConnection("jdbc:mysql://bookbetter-aws.czoua2woyqte.us-east-2.rds.amazonaws.com:3306/user", "admin", "!!mqsqlhubbard2024");
+        Connection connection = DriverManager.getConnection("jdbc:mysql://bookbetter-aws.czoua2woyqte.us-east-2.rds.amazonaws.com:3306/user", "admin", "!!mqsqlhubbard2024");
 
-        String userQuery = "SELECT * FROM users"; //query to collect all users from the users table
+        String userQuery = "SELECT * FROM users";
 
-        try(PreparedStatement statement = connection.prepareStatement(userQuery); ResultSet rs = statement.executeQuery()) { //execute the query statement
-            while(rs.next()){
-                users.add(new User(rs.getInt("id"), rs.getString("username"), rs.getString("type"), rs.getString("password"))); //create a new user objects and create it from the database informatino for eah uniq user
+        try (PreparedStatement statement = connection.prepareStatement(userQuery);
+             ResultSet rs = statement.executeQuery()) {
+            while (rs.next()) {
+                users.add(new User(rs.getInt("id"), rs.getString("username"), rs.getString("type"), rs.getString("password")));
             }
         }
 
-        return users; //return the array list
+        // Store fetched users in cache
+        cacheManager.put(cacheKey, users);
+
+        return users;
     }
 
     @Override

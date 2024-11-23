@@ -2,7 +2,9 @@ package com.example.cse360_project1.controllers;
 
 import com.example.cse360_project1.models.Book;
 import com.example.cse360_project1.models.Order;
+import com.example.cse360_project1.models.Transaction;
 import com.example.cse360_project1.models.User;
+import com.example.cse360_project1.services.JDBCConnection;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
@@ -125,7 +127,7 @@ public class BuyerView {
         booksGrid.setPadding(new Insets(20));
         booksGrid.setPrefWidth(800);
 
-        ObservableList<Book> allBooks = Book.fetchAllBooksFromDatabase();
+        ObservableList<Book> allBooks = JDBCConnection.fetchAllBooksFromDatabase();
         populateBooksGrid(booksGrid, allBooks);
 
         Button filterButton = new Button("Filter Books");
@@ -156,7 +158,7 @@ public class BuyerView {
         Button refreshButton = new Button("Refresh Books");
         refreshButton.setOnAction(e -> {
             booksGrid.getChildren().clear();
-            ObservableList<Book> updatedBooks = Book.fetchAllBooksFromDatabase();
+            ObservableList<Book> updatedBooks = JDBCConnection.fetchAllBooksFromDatabase();
             populateBooksGrid(booksGrid, updatedBooks);
         });
 
@@ -222,45 +224,9 @@ public class BuyerView {
         Label subtitleLabel = new Label("View your past orders");
         subtitleLabel.setPadding(new Insets(10, 20, 20, 20));
 
-        DatePicker datePicker = new DatePicker();
-        datePicker.setPromptText("Select a date");
-        datePicker.setPadding(new Insets(10, 10, 10, 10));
-
-        TableView<Order> orderTable = new TableView<>();
-        TableColumn<Order, String> dateColumn = new TableColumn<>("Date");
-        dateColumn.setCellValueFactory(new PropertyValueFactory<>("date"));
-
-        TableColumn<Order, String> titleColumn = new TableColumn<>("Book Title");
-        titleColumn.setCellValueFactory(new PropertyValueFactory<>("title"));
-
-        TableColumn<Order, Integer> quantityColumn = new TableColumn<>("Quantity");
-        quantityColumn.setCellValueFactory(new PropertyValueFactory<>("quantity"));
-
-        TableColumn<Order, Double> priceColumn = new TableColumn<>("Price");
-        priceColumn.setCellValueFactory(new PropertyValueFactory<>("price"));
-
-        orderTable.getColumns().addAll(dateColumn, titleColumn, quantityColumn, priceColumn);
-
-        // Mock order data
-        ObservableList<Order> allOrders = FXCollections.observableArrayList(
-                new Order("2024-11-21", "Book 1", 1, 15.99),
-                new Order("2024-11-20", "Book 2", 2, 29.99),
-                new Order("2024-11-20", "Book 3", 1, 12.50),
-                new Order("2024-11-19", "Book 4", 1, 18.75)
-        );
-
-        orderTable.setItems(allOrders);
-
-        datePicker.setOnAction(event -> {
-            LocalDate selectedDate = datePicker.getValue();
-            if (selectedDate != null) {
-                String selectedDateString = selectedDate.toString();
-                ObservableList<Order> filteredOrders = allOrders.filtered(order -> order.getDate().equals(selectedDateString));
-                orderTable.setItems(filteredOrders);
-            } else {
-                orderTable.setItems(allOrders);
-            }
-        });
+        TableView<Transaction> tableView = JDBCConnection.getTransactionTable(user);
+        tableView.setPrefWidth(1000);
+        tableView.setPrefHeight(650);
 
         AnchorPane.setTopAnchor(orderHistoryLabel, 30.0);
         AnchorPane.setLeftAnchor(orderHistoryLabel, 50.0);
@@ -268,15 +234,10 @@ public class BuyerView {
         AnchorPane.setTopAnchor(subtitleLabel, 75.0);
         AnchorPane.setLeftAnchor(subtitleLabel, 50.0);
 
-        AnchorPane.setTopAnchor(datePicker, 120.0);
-        AnchorPane.setLeftAnchor(datePicker, 50.0);
+        AnchorPane.setLeftAnchor(tableView, 50.0);
+        AnchorPane.setTopAnchor(tableView, 120.0);
 
-        AnchorPane.setTopAnchor(orderTable, 170.0);
-        AnchorPane.setLeftAnchor(orderTable, 50.0);
-        AnchorPane.setRightAnchor(orderTable, 50.0);
-        AnchorPane.setBottomAnchor(orderTable, 50.0);
-
-        pane.getChildren().addAll(orderHistoryLabel, subtitleLabel, datePicker, orderTable);
+        pane.getChildren().addAll(orderHistoryLabel, subtitleLabel, tableView);
 
         String css = getClass().getResource("/com/example/cse360_project1/css/UserSettings.css").toExternalForm();
         pane.getStylesheets().add(css);

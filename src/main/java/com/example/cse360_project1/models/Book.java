@@ -1,5 +1,6 @@
 package com.example.cse360_project1.models;
 
+import com.example.cse360_project1.services.SimpleCache;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
@@ -147,6 +148,22 @@ public class Book {
     }
     public double getPrice() {
         return price;
+    }
+
+    public ObservableList<Book> getPendingBooks() throws SQLException {
+
+        ObservableList<Book> books = FXCollections.observableArrayList();
+        Connection connection =  DriverManager.getConnection("jdbc:mysql://bookbetter-aws.czoua2woyqte.us-east-2.rds.amazonaws.com:3306/user", "admin", "!!mqsqlhubbard2024");
+
+        String bookQuery = "SELECT * FROM books WHERE book_status IN ('PENDING')";
+
+        try(PreparedStatement statement = connection.prepareStatement(bookQuery); ResultSet rs = statement.executeQuery()) { //query to get only books in Pending
+            while(rs.next()){
+                books.add(new Book(rs.getInt("book_id"), rs.getString("book_name"), rs.getString("book_author"), rs.getString("book_condition"), rs.getString("book_categories"), rs.getInt("collection_id"), getSpecificBookImage(rs.getInt("book_id"))));
+            }
+        }
+
+        return books;
     }
     public void setPrice(double price) {
         this.price = price;
@@ -311,36 +328,30 @@ public class Book {
     }
 
     //Get all books from the system as long as they are active or pending
-    public List<Book> getAllBooks() throws SQLException {
+    public List<Book> getAllBooks(SimpleCache simpleCache, String cacheKey) throws SQLException {
         List<Book> books = new ArrayList<>();
+        List<Book> cachedBooks = (List<Book>) simpleCache.get(cacheKey);
+        if (cachedBooks != null) {
+            return cachedBooks;
+        }
         Connection connection =  DriverManager.getConnection("jdbc:mysql://bookbetter-aws.czoua2woyqte.us-east-2.rds.amazonaws.com:3306/user", "admin", "!!mqsqlhubbard2024");
 
         String bookQuery = "SELECT * FROM books WHERE book_status IN ('PENDING', 'ACTIVE')"; //query to get only books in Pending and Active
 
         try(PreparedStatement statement = connection.prepareStatement(bookQuery); ResultSet rs = statement.executeQuery()) {
             while(rs.next()){
+
+
                 books.add(new Book(rs.getInt("book_id"), rs.getString("book_name"), rs.getString("book_author"), rs.getString("book_condition"), rs.getString("book_categories"), rs.getInt("collection_id"), getSpecificBookImage(rs.getInt("book_id"))));
             }
+            simpleCache.put(cacheKey, books);
         }
 
         return books;
     }
 
     //Get only the pending books from the system
-    public List<Book> getPendingBooks() throws SQLException {
-        List<Book> books = new ArrayList<>();
-        Connection connection =  DriverManager.getConnection("jdbc:mysql://bookbetter-aws.czoua2woyqte.us-east-2.rds.amazonaws.com:3306/user", "admin", "!!mqsqlhubbard2024");
 
-        String bookQuery = "SELECT * FROM books WHERE book_status IN ('PENDING')";
-
-        try(PreparedStatement statement = connection.prepareStatement(bookQuery); ResultSet rs = statement.executeQuery()) { //query to get only books in Pending
-            while(rs.next()){
-                books.add(new Book(rs.getInt("book_id"), rs.getString("book_name"), rs.getString("book_author"), rs.getString("book_condition"), rs.getString("book_categories"), rs.getInt("collection_id"), getSpecificBookImage(rs.getInt("book_id"))));
-            }
-        }
-
-        return books;
-    }
 
     @Override
     public String toString() {

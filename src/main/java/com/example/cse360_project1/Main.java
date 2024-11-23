@@ -17,7 +17,7 @@ public class Main extends Application {
         VBox mainLayout = new VBox();
         Button changeButton = new Button("Go to User Info");
         mainLayout.getChildren().add(changeButton);
-        Scene mainScene = new Scene(mainLayout, 1000, 750);
+        Scene mainScene = new Scene(mainLayout, 1280, 830);
 
         primaryStage.setTitle("BookBetter - Login");
         primaryStage.setScene(mainScene);
