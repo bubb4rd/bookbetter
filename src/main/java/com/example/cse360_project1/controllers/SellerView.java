@@ -252,7 +252,8 @@ public class SellerView {
 
 
         condition.getChildren().addAll((Node) conditionCombo, chooseImageButton);
-        conditionContainer.getChildren().addAll(conditionNameLabel, condition);
+        conditionContainer.getChildren().addAll(conditionNameLabel, condition, ogPriceLabel, ogPriceInput, newPriceLabel);
+
         ArrayList<ToggleButton> allCategories = new ArrayList<>();
         ArrayList<String> selectedCategories = new ArrayList<>();
         ToggleButton natScienceButton = new ToggleButton("Natural Science");
