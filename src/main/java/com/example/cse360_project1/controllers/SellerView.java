@@ -352,6 +352,10 @@ public class SellerView {
                        this.tab = "LIST_SUCCESS";
                        sceneController.switchScene(getScene());
                    }
+                   else {
+                       Error dbError = new Error("Failed to add book to database.");
+                       dbError.displayError(pane, mainScene);
+                   }
                } catch (NumberFormatException ex) {
                    Error invalidPriceError = new Error("Submission error: Invalid price");
                    invalidPriceError.displayError(pane, mainScene);
