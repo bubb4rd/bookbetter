@@ -38,7 +38,7 @@ public class Book {
             case "Heavily Used" -> this.price = 10.50;
         }
     }
-    public Book(int id, String name, String author, String condition, String categoiesJSON, int collectionID, File image) {
+    public Book(int id, String name, String author, String condition, String categoriesJSON, int collectionID, File image) {
         this.id = id;
         this.name = name;
         this.author = author;
