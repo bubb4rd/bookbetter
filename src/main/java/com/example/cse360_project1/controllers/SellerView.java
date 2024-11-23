@@ -480,6 +480,7 @@ public class SellerView {
             // Book details
             VBox detailsForm = new VBox(10);
 
+            // Button action for editing a book
             editButton.setOnAction(e -> {
                 Book selectedBook = bookListView.getSelectionModel().getSelectedItem();
                 if (selectedBook == null) {
