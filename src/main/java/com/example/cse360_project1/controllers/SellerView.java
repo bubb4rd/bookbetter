@@ -225,6 +225,19 @@ public class SellerView {
                 System.out.println("Original Price Input: " + ogPriceText);
                 double ogPrice = Double.parseDouble(ogPriceInput.getText());
                 String conditionValue = conditionCombo.getValue();
+
+                // Validate price and condition
+                if (!isValidDouble(ogPriceText)) {
+                    newPriceLabel.setText("Calculated Price: Invalid Base Price");
+                    return;
+                }
+                if (conditionValue == null || conditionValue.equals("Choose Book Condition")) {
+                    newPriceLabel.setText("Calculated Price: Invalid Base Price");
+                    return;
+                }
+
+                // Calculate new price
+                double ogPrice = Double.parseDouble(ogPriceText);
                 double newPrice = calculateNewPrice(ogPrice, conditionValue);
                 newPriceLabel.setText(String.format("Calculated Price: $%.2f", newPrice));
             } catch (NumberFormatException ex) {
