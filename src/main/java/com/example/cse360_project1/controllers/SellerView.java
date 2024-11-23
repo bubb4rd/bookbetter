@@ -444,6 +444,7 @@ public class SellerView {
 
     public AnchorPane getEditListings(Scene mainScene) {
         AnchorPane pane = new AnchorPane();
+        //Title
         Label titleLabel = new Label("Edit Listings");
         titleLabel.setStyle("-fx-font-size: 24px; -fx-font-weight: bold;");
         titleLabel.setPadding(new Insets(20));
