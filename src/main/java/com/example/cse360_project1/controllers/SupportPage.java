@@ -42,7 +42,7 @@ public class SupportPage {
 
         return scene;
     }
-    public AnchorPane contentPane(User user) {
+    public AnchorPane contentPane(Scene mainScene, User user) {
         AnchorPane pane = new AnchorPane();
         Label supportLabel = new Label("Support");
         supportLabel.getStyleClass().add("h1");
