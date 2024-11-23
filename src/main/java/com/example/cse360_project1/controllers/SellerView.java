@@ -470,13 +470,8 @@ public class SellerView {
             // No books listed
             Label noBooksLabel = new Label("You currently have no books listed for sale.");
             noBooksLabel.getStyleClass().add("h2");
-            contentBox.getChildren().add(noBooksLabel);
-        }
-        else{
-            //List of books
-            Label selectBookLabel = new Label("Select a Book");
-            selectBookLabel.getStyleClass().add("h3");
-            ListView<Book> bookListView = new ListView<>();
+            bookListBox.getChildren().addAll(selectBookLabel, noBooksLabel);
+        } else {
             bookListView.getItems().addAll(userBooks);
 
             Button editButton = new Button("Edit Selected Book");
