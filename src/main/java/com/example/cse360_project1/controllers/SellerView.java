@@ -528,7 +528,80 @@ public class SellerView {
         conditionComboBox.getItems().addAll("Lightly used", "Moderately used", "Heavily used");
         conditionComboBox.setValue(book.getCondition());
         conditionComboBox.getStyleClass().addAll("gray-border", "input");
+
+        Button saveButton = new Button("Save Changes");
+        saveButton.getStyleClass().add("primary");
+        saveButton.setOnAction(e -> {
+            String updatedName = bookNameField.getText();
+            String updatedAuthor = authorField.getText();
+            String updatedCondition = conditionComboBox.getValue();
+
+            if (updatedName.isEmpty() || updatedAuthor.isEmpty() || updatedCondition.isEmpty()) {
+                Error fieldError = new Error("Please fill out all fields before saving.");
+                fieldError.displayError(parentPane, null);
+            } else {
+                book.setName(updatedName);
+                book.setAuthor(updatedAuthor);
+                book.setCondition(updatedCondition);
+
+                try {
+                    int result = jdbcConnection.updateQuery(
+                            "UPDATE books SET book_name = '" + updatedName + "', book_author = '" + updatedAuthor +
+                            "', book_condition = '" + updatedCondition + "' WHERE book_id = " + book.getId()
+                    );
+                    if (result > 0) {
+                        Error successMessage = new Error("Book details updated successfully!");
+                        successMessage.displayError(parentPane, null);
+                    } else {
+                        Error updateError = new Error("Failed to update book details.");
+                        updateError.displayError(parentPane, null);
+                    }
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                }
+            }
+        });
+
+        detailsForm.getChildren().addAll(bookNameLabel, bookNameField, authorLabel, authorField, conditionLabel, conditionComboBox, saveButton);
     }
+
+//        Button saveButton = new Button("Save Changes");
+//        saveButton.getStyleClass().add("primary");
+//        saveButton.setOnAction(e -> {
+//            book.setName(bookNameField.getText());
+//            book.setAuthor(authorField.getText());
+//            book.setCondition(conditionComboBox.getValue());
+//            String updatedName = bookNameField.getText();
+//            String updatedAuthor = authorField.getText();
+//            String updatedCondition = conditionComboBox.getValue();
+//
+//            if (updatedName.isEmpty() || updatedAuthor.isEmpty() || updatedCondition.isEmpty()) {
+//                Error fieldError = new Error("Please enter all the fields to save your changes.");
+//                fieldError.displayError(parentPane, null);
+//            }
+//            else {
+//                book.setName(updatedName);
+//                book.setAuthor(updatedAuthor);
+//                book.setCondition(updatedCondition);
+//
+//                try {
+//                    if (jdbcConnection.updateQuery(
+//                            "UPDATE books SET book_name = '" + updatedName + "', book_author = '" + updatedAuthor +
+//                            "', book_condition = '" + updatedCondition + "' WHERE book_id = " + book.getId()) > 0) {
+//                        Error successMessage = new Error("Book details updated successfully!");
+//                        successMessage.displayError(parentPane, null);
+//                    }
+//                    else {
+//                        Error updateError = new Error("Failed to update book details.");
+//                        updateError.displayError(parentPane, null);
+//                    }
+//                } catch (SQLException ex) {
+//                    throw new RuntimeException(ex);
+//                }
+//            }
+//        });
+//        detailsForm.getChildren().addAll(bookNameLabel, bookNameField, authorLabel, conditionLabel, conditionComboBox);
+//    }
     public AnchorPane getTransactions(Scene mainScene) {
         AnchorPane pane = new AnchorPane();
         Label titleLabel = new Label("Transactions");
