@@ -21,7 +21,7 @@ public class Book {
 
 
 
-    public Book(int id, String name, String author, String condition, String categoiesJSON, int collectionID) {
+    public Book(int id, String name, String author, String condition, String categoriesJSON, int collectionID) {
         LocalDate today = LocalDate.now();
         this.date = today.toString();
         this.id = id;
