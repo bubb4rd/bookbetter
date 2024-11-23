@@ -1,5 +1,6 @@
 package com.example.cse360_project1.controllers;
 
+import com.example.cse360_project1.models.Error;
 import com.example.cse360_project1.models.User;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
