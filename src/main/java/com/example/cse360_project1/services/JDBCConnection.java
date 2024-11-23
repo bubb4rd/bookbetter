@@ -259,11 +259,14 @@ public class JDBCConnection {
                 preparedStatement.setString(7, book.getDate());
                 cacheManager.clear(ALL_BOOKS_CACHE_KEY);
                 return preparedStatement.executeUpdate() > 0;
-            } catch (SQLException | FileNotFoundException e) {
-                e.printStackTrace();
-                return false;
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
         }
+    }
 
     public static void invalidateCache() {
         cacheManager.clear(ALL_BOOKS_CACHE_KEY);
