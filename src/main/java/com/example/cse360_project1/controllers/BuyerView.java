@@ -1,11 +1,11 @@
 package com.example.cse360_project1.controllers;
 
 import com.example.cse360_project1.models.Book;
-import com.example.cse360_project1.models.Order;
 import com.example.cse360_project1.models.Transaction;
 import com.example.cse360_project1.models.User;
 import com.example.cse360_project1.services.JDBCConnection;
 import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
@@ -19,10 +19,27 @@ import javafx.scene.layout.VBox;
 import javafx.scene.shape.Line;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import static java.sql.DriverManager.getConnection;
 
 public class BuyerView {
+    private double subtotal;
+    private double salesTax;
+    private double totalPrice;
+    private ObservableList<Book> itemsInCart = FXCollections.observableArrayList();
     private final User user;
     private final SceneController sceneController;
     private String tab;
@@ -34,17 +51,29 @@ public class BuyerView {
             throw new RuntimeException("Placeholder image not found. Ensure the path is correct.", e);
         }
     }
-    //private static final Image PLACEHOLDER_IMAGE = new Image("file:/absolute/path/to/book.jpg");
-    private ObservableList<Book> books = FXCollections.observableArrayList();
+    private ObservableList<Book> activeBooks;
 
-
-    private ObservableList<Book> cart = FXCollections.observableArrayList();
+    private final ObservableList<Book> cart = FXCollections.observableArrayList();
     public BuyerView(User user, SceneController sceneController) {
         this.user = user;
         this.sceneController = sceneController;
         this.tab = "BROWSE";
-    }
 
+        JDBCConnection connection = new JDBCConnection();
+
+        List<Book> books = connection.getActiveBooks();
+        Map<Integer, File> images = connection.fetchImagesForBooks(
+                books.stream().map(Book::getId).collect(Collectors.toList())
+        );
+
+        for (Book book : books) {
+            File imageFile = images.get(book.getId());
+            if (imageFile != null) {
+                book.setImage(imageFile); // Assign image to the book
+            }
+        }
+        activeBooks = FXCollections.observableArrayList(books);
+    }
     public Scene getScene() {
         Scene mainScene = sceneController.getCurrentScene();
         AnchorPane root = new AnchorPane();
@@ -126,40 +155,66 @@ public class BuyerView {
         VBox booksGrid = new VBox(10);
         booksGrid.setPadding(new Insets(20));
         booksGrid.setPrefWidth(800);
-
-        ObservableList<Book> allBooks = JDBCConnection.fetchAllBooksFromDatabase();
-        populateBooksGrid(booksGrid, allBooks);
+        booksGrid.getChildren().clear();
+        populateBooksGrid(booksGrid, activeBooks);
 
         Button filterButton = new Button("Filter Books");
         filterButton.setOnAction(e -> {
-            ObservableList<Book> filteredBooks = allBooks.filtered(book -> {
-                boolean matchesCategory =
+            ObservableList<Book> filteredBooks = activeBooks.filtered(book -> {
+                // Check if any category is selected
+                boolean isAnyCategorySelected =
+                        natScienceCheckBox.isSelected() ||
+                                computerCheckBox.isSelected() ||
+                                mathCheckBox.isSelected() ||
+                                englishLanguageCheckBox.isSelected() ||
+                                scifiCheckBox.isSelected() ||
+                                artCheckBox.isSelected() ||
+                                novelCheckBox.isSelected();
+
+                // Match category only if at least one category is selected
+                boolean matchesCategory = !isAnyCategorySelected || (
                         (natScienceCheckBox.isSelected() && book.getCategories().contains("Natural Science")) ||
                                 (computerCheckBox.isSelected() && book.getCategories().contains("Computer")) ||
                                 (mathCheckBox.isSelected() && book.getCategories().contains("Math")) ||
                                 (englishLanguageCheckBox.isSelected() && book.getCategories().contains("English Language")) ||
                                 (scifiCheckBox.isSelected() && book.getCategories().contains("Sci-Fi")) ||
                                 (artCheckBox.isSelected() && book.getCategories().contains("Art")) ||
-                                (novelCheckBox.isSelected() && book.getCategories().contains("Novel"));
+                                (novelCheckBox.isSelected() && book.getCategories().contains("Novel"))
+                );
 
+                // Match condition
                 String selectedCondition =
                         conditionGroup.getSelectedToggle() != null ?
                                 ((RadioButton) conditionGroup.getSelectedToggle()).getText() : "";
 
                 boolean matchesCondition = selectedCondition.isEmpty() || book.getCondition().equals(selectedCondition);
 
+                // Return true if the book matches both category and condition filters
                 return matchesCategory && matchesCondition;
             });
 
+            // Update the grid with filtered books
             booksGrid.getChildren().clear();
             populateBooksGrid(booksGrid, filteredBooks);
         });
 
-        Button refreshButton = new Button("Refresh Books");
+        Button refreshButton = new Button ("Refresh");
         refreshButton.setOnAction(e -> {
+            // Reset category filters
+            natScienceCheckBox.setSelected(false);
+            computerCheckBox.setSelected(false);
+            mathCheckBox.setSelected(false);
+            englishLanguageCheckBox.setSelected(false);
+            scifiCheckBox.setSelected(false);
+            artCheckBox.setSelected(false);
+            novelCheckBox.setSelected(false);
+
+            // Reset condition filter
+            conditionGroup.getToggles().forEach(toggle -> ((RadioButton) toggle).setSelected(false));
+
+            // Reset the grid to show all books
             booksGrid.getChildren().clear();
-            ObservableList<Book> updatedBooks = JDBCConnection.fetchAllBooksFromDatabase();
-            populateBooksGrid(booksGrid, updatedBooks);
+            populateBooksGrid(booksGrid, activeBooks);
         });
 
         VBox filterSection = new VBox(10, filters, filterButton, refreshButton);
@@ -203,18 +258,15 @@ public class BuyerView {
 
             Label bookDetails = new Label(book.getName() + " by " + book.getAuthor() + " - " + book.getCondition());
             Button addToCartButton = new Button("Add to Cart");
-            addToCartButton.setOnAction(event -> addToCart(book));
+            JDBCConnection connection = new JDBCConnection();
+            addToCartButton.setOnAction(event -> {
+                connection.updateCart(book.getId(), user.getId());
+            });
 
             bookItem.getChildren().addAll(bookImageView, bookDetails, addToCartButton);
             booksGrid.getChildren().add(bookItem);
         }
     }
-
-    private void addToCart(Book book) {
-        cart.add(book);
-        System.out.println(book.getName() + " added to cart.");
-    }
-
 
     public AnchorPane getOrderHistory(Scene mainScene) {
         AnchorPane pane = new AnchorPane();
@@ -271,45 +323,60 @@ public class BuyerView {
         Button confirm = new Button("Confirm");
         buttons.getChildren().addAll(clearBag, confirm);
 
-        ArrayList<Book> books = new ArrayList<Book>();
-        Book book1 = new Book(1, "Up", "Me", "Heavily Used", "Fiction", 3);
-        Book book2 = new Book(2, "Diary of a Wimpy Kid", "IDK", "Lightly Used", "Fiction", 3);
-        Book book3 = new Book(3, "Magic Treehouse", "Not sure", "Moderately Used", "Fiction", 3);
-        books.add(book1);
-        books.add(book2);
-        books.add(book3);
+        VBox cartGrid = new VBox();
+        cartGrid.setPadding(new Insets(20));
+        cartGrid.setPrefWidth(690);
+        cartGrid.setPrefHeight(460);
 
-        VBox bookTitles = new VBox();
-        bookTitles.setSpacing(10.0);
-        bookTitles.setStyle("-fx-font-size: 18");
-        VBox bookConditions = new VBox();
-        bookConditions.setSpacing(10.0);
-        bookConditions.setStyle("-fx-font-size: 18");
-        VBox bookPrice = new VBox();
-        bookPrice.setSpacing(10.0);
-        bookPrice.setStyle("-fx-font-size: 18");
+        ArrayList<Book> items = new ArrayList<Book>();
+        JDBCConnection connection = new JDBCConnection();
+        items = connection.getCartItems(user.getId());
+        itemsInCart = FXCollections.observableArrayList(items);
 
-        for (Book book : books) {
-            Label title = new Label(book.getName());
-            //System.out.println(book.getName());
-            Label condition = new Label(book.getCondition());
-            //System.out.println(book.getCondition());
-            Label price = new Label("$10.00");
-            //System.out.println(book.getPrice());
-            bookTitles.getChildren().add(title);
-            bookConditions.getChildren().add(condition);
-            bookPrice.getChildren().add(price);
-            if (condition.equals("Heavily Used")){
+        VBox priceBox = new VBox(5.0);
 
-            }
-        }
+        subtotal = populateCart(cartGrid, priceBox, itemsInCart);
+        salesTax = subtotal * .07;
+        totalPrice = subtotal + salesTax;
+        priceBox.setStyle("-fx-font-weight: bold");
+        Label subtotalCalc = new Label(String.format("$%.2f", subtotal));
+        Label salesTaxCalc = new Label(String.format("$%.2f", salesTax));
+        Label totalPriceCalc = new Label(String.format("$%.2f", totalPrice));
+        priceBox.getChildren().addAll(subtotalCalc, salesTaxCalc, totalPriceCalc);
+
+        ScrollPane scrollPane = new ScrollPane(cartGrid);
+        scrollPane.setFitToHeight(true);
+        scrollPane.setFitToWidth(true);
 
         //update database
-        clearBag.setOnAction(e -> {});
-        confirm.setOnAction(e -> {});
+        clearBag.setOnAction(e -> {
+            connection.removeAllBooksFromCart(user.getId());
+            itemsInCart.clear();
+            cartGrid.getChildren().clear();
+            priceBox.getChildren().clear();
+        });
+        confirm.setOnAction(e -> {
+            if (itemsInCart.isEmpty()) {
+                // Show an alert or a message when the cart is empty
+                Alert alert = new Alert(Alert.AlertType.WARNING);
+                alert.setTitle("Empty Cart");
+                alert.setHeaderText(null);
+                alert.setContentText("Your cart is empty. Please add some books to your cart before confirming the order.");
+                alert.showAndWait();
+            } else {
 
-        pane.getChildren().addAll(cartLabel, line1, line2, priceLabels, buttons, bookTitles, bookConditions, bookPrice, titles, conditions, prices);
+                connection.confirmPurchase(user.getId());
+                cartGrid.getChildren().clear();
+                priceBox.getChildren().clear();
+                displayOrder(pane);
+            }
+        });
+
+        pane.getChildren().addAll(cartLabel, line1, line2, priceLabels, buttons, scrollPane, priceBox);
         String css = getClass().getResource("/com/example/cse360_project1/css/UserSettings.css").toExternalForm();
+
+        AnchorPane.setTopAnchor(scrollPane, 110.0);
+        AnchorPane.setLeftAnchor(scrollPane, 50.0);
 
         AnchorPane.setTopAnchor(cartLabel, 30.0);
         AnchorPane.setLeftAnchor(cartLabel, mainScene.getWidth() / 3.25);
@@ -317,15 +384,11 @@ public class BuyerView {
         AnchorPane.setTopAnchor(priceLabels, 600.0);
         AnchorPane.setLeftAnchor(priceLabels, mainScene.getWidth() / 1.8);
 
+        AnchorPane.setTopAnchor(priceBox, 600.0);
+        AnchorPane.setLeftAnchor(priceBox, mainScene.getWidth() / 1.5);
+
         AnchorPane.setTopAnchor(buttons, 700.0);
         AnchorPane.setLeftAnchor(buttons, mainScene.getWidth() / 1.7);
-
-        AnchorPane.setTopAnchor(bookTitles, 120.0);
-        AnchorPane.setLeftAnchor(bookTitles, 50.0);
-        AnchorPane.setTopAnchor(bookConditions, 120.0);
-        AnchorPane.setLeftAnchor(bookConditions, mainScene.getWidth() / 2.5);
-        AnchorPane.setTopAnchor(bookPrice, 120.0);
-        AnchorPane.setLeftAnchor(bookPrice, mainScene.getWidth() / 1.5);
 
         AnchorPane.setTopAnchor(titles, 75.0);
         AnchorPane.setLeftAnchor(titles, 50.0);
@@ -337,8 +400,111 @@ public class BuyerView {
         pane.getStylesheets().add(css);
         return pane;
     }
+    private double populateCart(VBox cartGrid, VBox priceBox, ObservableList<Book> itemsInCart) {
+        subtotal = 0.0;
+        for (Book book : itemsInCart) {
+            HBox cartItem = new HBox(10);
+
+            ImageView bookImageView = new ImageView();
+            File bookImageFile = book.getImage();
+            Image displayImage;
+
+            if (bookImageFile != null && bookImageFile.exists()) {
+                displayImage = new Image(bookImageFile.toURI().toString());
+            } else {
+                displayImage = PLACEHOLDER_IMAGE;
+            }
+
+            bookImageView.setImage(displayImage);
+            bookImageView.setFitWidth(100);
+            bookImageView.setFitHeight(120);
+
+            subtotal += book.getPrice();
+
+            Label bookDetails = new Label(book.getName() + " by " + book.getAuthor() + " - " + book.getPrice());
+            bookDetails.setStyle("-fx-font-size: 16px");
+            Button remove = new Button("x");
+            remove.setStyle("-fx-text-fill: red");
+            remove.setOnAction(event -> {
+                JDBCConnection connection = new JDBCConnection();
+                connection.removeOneBook(book.getId());
+                itemsInCart.remove(book);
+
+                cartGrid.getChildren().clear();
+                populateCart(cartGrid, priceBox, itemsInCart);
+
+                salesTax = subtotal * .07;
+                totalPrice = subtotal + salesTax;
+                priceBox.getChildren().clear();
+                Label subtotalCalc = new Label(String.format("$%.2f", subtotal));
+                Label salesTaxCalc = new Label(String.format("$%.2f", salesTax));
+                Label totalPriceCalc = new Label(String.format("$%.2f", totalPrice));
+                priceBox.getChildren().addAll(subtotalCalc, salesTaxCalc, totalPriceCalc);
+            });
+
+            cartItem.getChildren().addAll(bookImageView, bookDetails, remove);
+            cartGrid.getChildren().add(cartItem);
+        }
+        return subtotal;
+    }
+    private void displayOrder(AnchorPane pane){
+        pane.getChildren().clear();
+
+        Label orderConfirmationLabel = new Label("ORDER CONFIRMED");
+        orderConfirmationLabel.setStyle("-fx-font-size: 24px; -fx-font-weight: bold");
+        AnchorPane.setTopAnchor(orderConfirmationLabel, 30.0);
+        AnchorPane.setLeftAnchor(orderConfirmationLabel, 50.0);
+
+        Label orderSummary = new Label("ORDER SUMMARY:");
+        orderSummary.setStyle("-fx-font-size: 18px; -fx-font-weight: bold");
+        AnchorPane.setTopAnchor(orderSummary, 90.0);
+        AnchorPane.setLeftAnchor(orderSummary, 50.0);
+
+        VBox bookTitles = new VBox(10);
+        VBox bookConditions = new VBox(10);
+        VBox bookPrices = new VBox(10);
+
+        for (Book book : itemsInCart) {
+            Label bookTitle = new Label(book.getName());
+            Label bookCondition = new Label(book.getCondition());
+            Label bookPrice = new Label(String.format("$%.2f", book.getPrice()));
+            bookTitles.getChildren().add(bookTitle);
+            bookConditions.getChildren().add(bookCondition);
+            bookPrices.getChildren().add(bookPrice);
+        }
+
+        VBox priceBox = new VBox(5.0);
+        priceBox.setStyle("-fx-font-weight: bold");
+        Label subtotalCalc = new Label(String.format("$%.2f", subtotal));
+        Label salesTaxCalc = new Label(String.format("$%.2f", salesTax));
+        Label totalPriceCalc = new Label(String.format("$%.2f", totalPrice));
+        priceBox.getChildren().addAll(subtotalCalc, salesTaxCalc, totalPriceCalc);
+
+        VBox priceLabels = new VBox();
+        priceLabels.setSpacing(5.0);
+        Label subtotalLabel = new Label("Subtotal:");
+        Label salesTaxLabel = new Label("Sales Tax:");
+        Label totalLabel = new Label("Total:");
+        priceLabels.setStyle("-fx-font-weight: bold");
+        priceLabels.getChildren().addAll(subtotalLabel, salesTaxLabel, totalLabel);
+
+        AnchorPane.setTopAnchor(bookTitles, 120.0);
+        AnchorPane.setLeftAnchor(bookTitles, 50.0);
+        AnchorPane.setTopAnchor(bookConditions, 120.0);
+        AnchorPane.setLeftAnchor(bookConditions, 200.0);
+        AnchorPane.setTopAnchor(bookPrices, 120.0);
+        AnchorPane.setLeftAnchor(bookPrices, 350.0);
+
+        AnchorPane.setTopAnchor(priceLabels, 120.0);
+        AnchorPane.setLeftAnchor(priceLabels, 500.0);
+        AnchorPane.setTopAnchor(priceBox, 120.0);
+        AnchorPane.setLeftAnchor(priceBox, 580.0);
+
+        pane.getChildren().addAll(orderConfirmationLabel, orderSummary, priceLabels, priceBox, bookTitles, bookConditions, bookPrices);
+    }
 
     public void setTab(String tab) {
         this.tab = tab;
+        AnchorPane content = getContentPane(sceneController.getCurrentScene());
     }
 }

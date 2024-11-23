@@ -20,7 +20,10 @@ import java.io.*;
 import java.sql.DriverManager;
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public class JDBCConnection {
     Connection connection;
@@ -149,6 +152,41 @@ public class JDBCConnection {
         */
     }
 
+    public Map<Integer, File> fetchImagesForBooks(List<Integer> bookIds) {
+        Map<Integer, File> imageFiles = new HashMap<>();
+        if (bookIds.isEmpty()) {
+            return imageFiles; // Return empty map if no book IDs provided
+        }
+
+        String query = "SELECT book_id, book_image FROM books WHERE book_id IN (" +
+                bookIds.stream().map(String::valueOf).collect(Collectors.joining(", ")) + ")";
+
+        try (Connection connection = getConnection();
+             PreparedStatement statement = connection.prepareStatement(query);
+             ResultSet resultSet = statement.executeQuery()) {
+
+            while (resultSet.next()) {
+                int bookId = resultSet.getInt("book_id");
+                InputStream inputStream = resultSet.getBinaryStream("book_image");
+
+                if (inputStream != null) {
+                    File tempFile = File.createTempFile("book_image_" + bookId, ".jpg");
+                    try (FileOutputStream outputStream = new FileOutputStream(tempFile)) {
+                        byte[] buffer = new byte[1024];
+                        int bytesRead;
+                        while ((bytesRead = inputStream.read(buffer)) != -1) {
+                            outputStream.write(buffer, 0, bytesRead);
+                        }
+                    }
+                    imageFiles.put(bookId, tempFile);
+                }
+            }
+        } catch (SQLException | IOException e) {
+            e.printStackTrace();
+        }
+        return imageFiles;
+    }
+
     public boolean uploadImage(File image, int id)  {
 
 
@@ -182,6 +220,14 @@ public class JDBCConnection {
         }
         return false;
     };
+    public void removeOneBook(int bookID) {
+        try {
+            String query = "UPDATE books SET book_status = 'ACTIVE', buyer_id = -1 WHERE book_id = " + bookID;
+            int updateResult = updateQuery(query);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
     public boolean addBook(Book book) {
         try (Connection currentConnection = getConnection()) {
             // Check for multiple collection_ids for the user
@@ -552,6 +598,76 @@ public class JDBCConnection {
             e.printStackTrace();
         }
         return false;
+    }
+
+    public ArrayList<Book> getCartItems(int ID) {
+        ArrayList<Book> books = new ArrayList<>();
+        try {
+            this.result = fetchQuery("SELECT * FROM books WHERE book_status = 'INCART' AND buyer_id = " + ID);
+            while (result.next()) {
+                int book_id = result.getInt("book_id");
+                int collection_id = result.getInt("collection_id");
+                String book_name = result.getString("book_name");
+                String book_author = result.getString("book_author");
+                String book_condition = result.getString("book_condition");
+                String categories = result.getString("book_categories");
+                Book book = new Book(book_id, book_name, book_author, book_condition, categories, collection_id);
+                books.add(book);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        return books;
+    }
+    public void confirmPurchase(int userID){
+        try {
+            String query = "UPDATE books SET book_status = 'PURCHASED' WHERE book_status = 'INCART' AND buyer_id = " + userID;
+            int updateResult = updateQuery(query);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+    public void removeAllBooksFromCart(int userID) {
+        try {
+            String query = "UPDATE books SET book_status = 'ACTIVE', buyer_id = -1 WHERE book_status = 'INCART' AND buyer_id = " + userID;
+            int updateResult = updateQuery(query);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void updateCart(int bookID, int userID){
+        try {
+            String query = "UPDATE books SET book_status = 'INCART', buyer_id = " + userID + " WHERE book_id = " + bookID;
+            int updateResult = updateQuery(query);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public ArrayList<Book> getActiveBooks() {
+        ArrayList<Book> books = new ArrayList<>();
+        String query = "SELECT * FROM books WHERE book_status IN ('PENDING', 'ACTIVE')";
+
+        try (Connection connection = getConnection();
+             Statement statement = connection.createStatement();
+             ResultSet resultSet = statement.executeQuery(query)) {
+
+            while (resultSet.next()) {
+                int book_id = resultSet.getInt("book_id");
+                int collection_id = resultSet.getInt("collection_id");
+                String book_name = resultSet.getString("book_name");
+                String book_author = resultSet.getString("book_author");
+                String book_condition = resultSet.getString("book_condition");
+                String categories = resultSet.getString("book_categories");
+                Book book = new Book(book_id, book_name, book_author, book_condition, categories, collection_id);
+                books.add(book);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return books;
     }
 
     public File fetchBookImage(int bookId) {
