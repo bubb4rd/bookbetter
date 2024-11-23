@@ -43,7 +43,7 @@ public class Book {
         this.name = name;
         this.author = author;
         this.condition = condition;
-        this.categories = parseJSON(categoiesJSON);
+        this.categories = parseJSON(categoriesJSON);
         this.collectionID = collectionID;
         this.image = image;
         LocalDate today = LocalDate.now();
