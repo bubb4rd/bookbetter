@@ -195,15 +195,15 @@ public class JDBCConnection {
                     collectionIds.add(rs.getInt("collection_id"));
                 }
 
-                // Handle case where no collection_id exists
-                int collectionId;
-                if (collectionIds.isEmpty()) {
-                    System.out.println("No collection_id found for user_id: " + book.getCollectionID());
-                    // Create a new collection_id for the user
-                    String createQuery = "INSERT INTO book_collections (user_id) VALUES (?)";
-                    PreparedStatement createStatement = currentConnection.prepareStatement(createQuery, Statement.RETURN_GENERATED_KEYS);
-                    createStatement.setInt(1, book.getCollectionID());
-                    createStatement.executeUpdate();
+            // Handle case where no collection_id exists
+            int collectionId;
+            if (collectionIds.isEmpty()) {
+                System.out.println("No collection_id found for user_id: " + book.getCollectionID());
+                // Create a new collection_id for the user
+                String createQuery = "INSERT INTO book_collections (user_id) VALUES (?)";
+                PreparedStatement createStatement = currentConnection.prepareStatement(createQuery, Statement.RETURN_GENERATED_KEYS);
+                createStatement.setInt(1, book.getCollectionID());
+                createStatement.executeUpdate();
 
                     // Retrieve the generated collection_id
                     ResultSet generatedKeys = createStatement.getGeneratedKeys();
