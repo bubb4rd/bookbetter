@@ -131,20 +131,17 @@ public class JDBCConnection {
         return false;
     };
     public boolean addBook(Book book) {
+            try (Connection currentConnection = getConnection()) {
+                // Check for multiple collection_ids for the user
+                String checkQuery = "SELECT collection_id FROM book_collections WHERE user_id = ? ORDER BY collection_id ASC";
+                PreparedStatement checkStatement = currentConnection.prepareStatement(checkQuery);
+                checkStatement.setInt(1, book.getCollectionID()); // Assuming book.getCollectionID() returns the user_id
+                ResultSet rs = checkStatement.executeQuery();
 
-        int results = -1;
-        try {
-            // Check if user has a book collection associated with their ID else create one
-            System.out.println(book.getCollectionID());
-            if (!bookCollectionExists(book.getCollectionID())) {
-                updateQuery("INSERT INTO book_collections (user_id) VALUE (" + book.getCollectionID() + ")");
-            }
-
-            if (book.getImage() == null) results = updateQuery("INSERT INTO books (collection_id, book_author, book_name, book_condition, book_categories) VALUES ('" + book.getCollectionID() + "', '" + book.getAuthor() + "', " + book.getCondition() + ", '" + book.getCategories() + "')");
-            else {
-                String query = "INSERT INTO books (collection_id, book_author, book_name, book_condition, book_categories, book_image, date) " +
-                        "VALUES ((SELECT collection_id FROM book_collections WHERE user_id = ?), ?, ?, ?, CAST(? AS JSON), ?, ?)";
-                try (Connection currentConnection = getConnection()) {
+                List<Integer> collectionIds = new ArrayList<>();
+                while (rs.next()) {
+                    collectionIds.add(rs.getInt("collection_id"));
+                }
 
                     FileInputStream inputStream = new FileInputStream(book.getImage());
                     PreparedStatement preparedStatement = connection.prepareStatement(query);
