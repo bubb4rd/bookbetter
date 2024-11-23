@@ -367,7 +367,7 @@ public class SellerView {
            String bookAuthor = authorNameInput.getText();
            String bookCondition = conditionCombo.getValue();
            String bookCategories = Arrays.toString(selectedCategories.toArray());
-           if (bookName.isEmpty() || bookAuthor.isEmpty()  || bookCategories.isEmpty() || bookCondition.equals("Choose Account Type")) {
+           if (bookName.isEmpty() || bookAuthor.isEmpty() || bookCondition.isEmpty() || bookCategories.isEmpty() || bookCondition.equals("Choose Book Condition")) {
                Error emptyFieldError = new Error("Submit error: One or more empty field");
                emptyFieldError.displayError(pane, mainScene);
            } else if (imageFile.get() == null) {
