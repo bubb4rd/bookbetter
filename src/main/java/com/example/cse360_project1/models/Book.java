@@ -1,5 +1,6 @@
 package com.example.cse360_project1.models;
 
+import com.example.cse360_project1.services.SimpleCache;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
@@ -7,6 +8,7 @@ import java.io.*;
 import java.sql.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.List;
 
 public class Book {
     private int id;
@@ -148,6 +150,22 @@ public class Book {
     public double getPrice() {
         return price;
     }
+
+    public ObservableList<Book> getPendingBooks() throws SQLException {
+
+        ObservableList<Book> books = FXCollections.observableArrayList();
+        Connection connection =  DriverManager.getConnection("jdbc:mysql://bookbetter-aws.czoua2woyqte.us-east-2.rds.amazonaws.com:3306/user", "admin", "!!mqsqlhubbard2024");
+
+        String bookQuery = "SELECT * FROM books WHERE book_status IN ('PENDING')";
+
+        try(PreparedStatement statement = connection.prepareStatement(bookQuery); ResultSet rs = statement.executeQuery()) { //query to get only books in Pending
+            while(rs.next()){
+                books.add(new Book(rs.getInt("book_id"), rs.getString("book_name"), rs.getString("book_author"), rs.getString("book_condition"), rs.getString("book_categories"), rs.getInt("collection_id"), getSpecificBookImage(rs.getInt("book_id"))));
+            }
+        }
+
+        return books;
+    }
     public void setPrice(double price) {
         this.price = price;
     }
@@ -269,10 +287,75 @@ public class Book {
         return null;
     }
 
+    //get the File associated with a specific bookID
+    private File getSpecificBookImage(int bookID){
+        //System.out.println("Fetching image for book ID: " + bookID);
+
+        String query = "SELECT book_image FROM books WHERE book_id = ?"; //query to get the image for a specific book id
+
+        try (Connection connection = DriverManager.getConnection("jdbc:mysql://bookbetter-aws.czoua2woyqte.us-east-2.rds.amazonaws.com:3306/user", "admin", "!!mqsqlhubbard2024");
+             PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setInt(1, bookID);
+
+            ResultSet resultSet = statement.executeQuery();
+
+            if (resultSet.next()) {
+                InputStream inputStream = resultSet.getBinaryStream("book_image"); //get the binary data for the book_image
+                System.out.println("Image data found for book ID: " + bookID);
+
+                if (inputStream != null) {
+                    File tempFile = File.createTempFile("book_image_" + bookID, ".jpg"); //create a temporary file for the book image
+                    try (FileOutputStream outputStream = new FileOutputStream(tempFile)) {
+                        byte[] buffer = new byte[1024];
+                        int bytesRead;
+                        while ((bytesRead = inputStream.read(buffer)) != -1) {
+                            outputStream.write(buffer, 0, bytesRead);
+                        }
+                    }
+                    System.out.println("Image written to temp file: " + tempFile.getAbsolutePath());
+                    return tempFile; //return the created temporary file
+                } else {
+                    System.out.println("No binary data found for book ID: " + this.id);
+                }
+            } else {
+                System.out.println("No result found for book ID: " + this.id);
+            }
+
+        } catch (SQLException | IOException e) {
+            System.err.println("Error retrieving image for book ID " + this.id + ": " + e.getMessage());
+        }
+
+        return null;
+    }
+
+    //Get all books from the system as long as they are active or pending
+    public List<Book> getAllBooks(SimpleCache simpleCache, String cacheKey) throws SQLException {
+        List<Book> books = new ArrayList<>();
+        List<Book> cachedBooks = (List<Book>) simpleCache.get(cacheKey);
+        if (cachedBooks != null) {
+            return cachedBooks;
+        }
+        Connection connection =  DriverManager.getConnection("jdbc:mysql://bookbetter-aws.czoua2woyqte.us-east-2.rds.amazonaws.com:3306/user", "admin", "!!mqsqlhubbard2024");
+
+        String bookQuery = "SELECT * FROM books WHERE book_status IN ('PENDING', 'ACTIVE')"; //query to get only books in Pending and Active
+
+        try(PreparedStatement statement = connection.prepareStatement(bookQuery); ResultSet rs = statement.executeQuery()) {
+            while(rs.next()){
+
+
+                books.add(new Book(rs.getInt("book_id"), rs.getString("book_name"), rs.getString("book_author"), rs.getString("book_condition"), rs.getString("book_categories"), rs.getInt("collection_id"), getSpecificBookImage(rs.getInt("book_id"))));
+            }
+            simpleCache.put(cacheKey, books);
+        }
+
+        return books;
+    }
+
+    //Get only the pending books from the system
+
 
     @Override
     public String toString() {
         return name + ", $" + price + " " + author + " " + condition + " " + stringCategories(categories);
     }
-
 }

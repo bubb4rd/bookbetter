@@ -28,7 +28,9 @@ public class JDBCConnection {
     Connection connection;
     ResultSet result;
     Exception error;
-    private SimpleCache cacheManager = SimpleCache.getInstance();
+    private static SimpleCache cacheManager = SimpleCache.getInstance();
+    static final String ALL_BOOKS_CACHE_KEY = "all_books";
+
     public JDBCConnection() {
 
     }
@@ -207,12 +209,17 @@ public class JDBCConnection {
                 preparedStatement.setString(5, book.categoriesToJSON(book.getCategories()));
                 preparedStatement.setBinaryStream(6, new FileInputStream(book.getImage()), (int) book.getImage().length());
                 preparedStatement.setString(7, book.getDate());
+                cacheManager.clear(ALL_BOOKS_CACHE_KEY);
                 return preparedStatement.executeUpdate() > 0;
             } catch (SQLException | FileNotFoundException e) {
                 e.printStackTrace();
                 return false;
             }
         }
+
+    public static void invalidateCache() {
+        cacheManager.clear(ALL_BOOKS_CACHE_KEY);
+    }
 
     public User getUser(String username) throws SQLException {
         fetchQuery("SELECT * FROM users WHERE username=" + username);
@@ -252,23 +259,80 @@ public class JDBCConnection {
         }
         return null;
     }
-    public ArrayList<Book> getAllBooks() {
-        ArrayList<Book> books = new ArrayList<>();
+    public boolean deleteBook(int id) {
+        invalidateCache();
         try {
-            this.result = fetchQuery("SELECT * FROM books;");
-            while (result.next()) {
-                int book_id = result.getInt("book_id");
-                int collection_id = result.getInt("collection_id");
-                String book_name = result.getString("book_name");
-                String book_author = result.getString("book_author");
-                String book_condition = result.getString("book_condition");
-                String categories = result.getString("book_categories");
+            fetchQuery("SELECT * FROM books WHERE book_id="+id);
+            if (result.next()) {
+                updateQuery("DELETE FROM books WHERE id = " + id);
+                return true;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+    public ArrayList<Book> getAllBooks() {
+        ArrayList<Book> cachedBooks = (ArrayList<Book>) cacheManager.get(ALL_BOOKS_CACHE_KEY);
+        if (cachedBooks != null) {
+            return cachedBooks;
+        }
+        ArrayList<Book> books = new ArrayList<>();
+        try (Connection connection = getConnection()) {
+            PreparedStatement preparedStatement = connection.prepareStatement("SELECT * FROM books");
+            ResultSet resultSet = preparedStatement.executeQuery();
+            while (resultSet.next()) {
+                int book_id = resultSet.getInt("book_id");
+                int collection_id = resultSet.getInt("collection_id");
+                String book_name = resultSet.getString("book_name");
+                String book_author = resultSet.getString("book_author");
+                String book_condition = resultSet.getString("book_condition");
+                String categories = resultSet.getString("book_categories");
+                String status = resultSet.getString("book_status");
                 Book book = new Book(book_id, book_name, book_author, book_condition, categories, collection_id);
                 books.add(book);
             }
+            cacheManager.put(ALL_BOOKS_CACHE_KEY, books);
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            e.printStackTrace();
         }
+        return books;
+    }
+    public static ObservableList<Book> fetchAllBooksFromDatabase() {
+        ObservableList<Book> cachedBooks = (ObservableList<Book>) cacheManager.get(ALL_BOOKS_CACHE_KEY);
+
+        if (cachedBooks != null) {
+            return cachedBooks;
+        }
+
+        ObservableList<Book> books = FXCollections.observableArrayList();
+        final String JDBC_URL = "jdbc:mysql://bookbetter-aws.czoua2woyqte.us-east-2.rds.amazonaws.com:3306/user";
+        final String username = "admin";
+        final String password = "!!mqsqlhubbard2024";
+
+        String query = "SELECT book_id, book_name, book_author, book_condition, book_categories, collection_id FROM books";
+
+        try (Connection connection = DriverManager.getConnection(JDBC_URL, username, password);
+             PreparedStatement statement = connection.prepareStatement(query);
+             ResultSet resultSet = statement.executeQuery()) {
+
+            while (resultSet.next()) {
+                int id = resultSet.getInt("book_id");
+                String name = resultSet.getString("book_name");
+                String author = resultSet.getString("book_author");
+                String condition = resultSet.getString("book_condition");
+                String categoriesJSON = resultSet.getString("book_categories");
+                int collectionID = resultSet.getInt("collection_id");
+
+                books.add(new Book(id, name, author, condition, categoriesJSON, collectionID));
+            }
+
+            cacheManager.put(ALL_BOOKS_CACHE_KEY, books);
+
+        } catch (SQLException e) {
+            System.err.println("Error fetching books from database: " + e.getMessage());
+        }
+
         return books;
     }
     public ArrayList<Book> getBookCollection(User user) {
@@ -300,29 +364,51 @@ public class JDBCConnection {
 
         ArrayList<Transaction> transactions = new ArrayList<>();
         try(Connection connection = getConnection()) {
-            PreparedStatement preparedStatement = connection.prepareStatement("SELECT * FROM books WHERE collection_id=?");
-            preparedStatement.setInt(1, user.getId());
-            ResultSet resultSet = preparedStatement.executeQuery();
-            while (resultSet.next()) {
-                int book_id = resultSet.getInt("book_id");
-                int collection_id = resultSet.getInt("collection_id");
-                String book_name = resultSet.getString("book_name");
-                String book_author = resultSet.getString("book_author");
-                String book_condition = resultSet.getString("book_condition");
-                String categories = resultSet.getString("book_categories");
-                String status = resultSet.getString("book_status");
-                int buyer_id = resultSet.getInt("buyer_id");
-                String date = resultSet.getString("date");
-                Book book = new Book(book_id, book_name, book_author, book_condition, categories, collection_id);
-                transactions.add(new Transaction(book_id, user, getUser(buyer_id), date, book, status));
+            String sql = "";
+            if (user.getUserType().equals("ADMIN")) {
+                sql = "SELECT * FROM books";
+                PreparedStatement preparedStatement = connection.prepareStatement(sql);
+                ResultSet resultSet = preparedStatement.executeQuery();
+                while (resultSet.next()) {
+                    int book_id = resultSet.getInt("book_id");
+                    int collection_id = resultSet.getInt("collection_id");
+                    String book_name = resultSet.getString("book_name");
+                    String book_author = resultSet.getString("book_author");
+                    String book_condition = resultSet.getString("book_condition");
+                    String categories = resultSet.getString("book_categories");
+                    String status = resultSet.getString("book_status");
+                    int buyer_id = resultSet.getInt("buyer_id");
+                    String date = resultSet.getString("date");
+                    Book book = new Book(book_id, book_name, book_author, book_condition, categories, collection_id);
+                    transactions.add(new Transaction(book_id, user, getUser(buyer_id), date, book, status));
+                }
+            } else {
+                sql = "SELECT * FROM books WHERE collection_id=?";
+                PreparedStatement preparedStatement = connection.prepareStatement(sql);
+                preparedStatement.setInt(1, user.getId());
+                ResultSet resultSet = preparedStatement.executeQuery();
+                while (resultSet.next()) {
+                    int book_id = resultSet.getInt("book_id");
+                    int collection_id = resultSet.getInt("collection_id");
+                    String book_name = resultSet.getString("book_name");
+                    String book_author = resultSet.getString("book_author");
+                    String book_condition = resultSet.getString("book_condition");
+                    String categories = resultSet.getString("book_categories");
+                    String status = resultSet.getString("book_status");
+                    int buyer_id = resultSet.getInt("buyer_id");
+                    String date = resultSet.getString("date");
+                    Book book = new Book(book_id, book_name, book_author, book_condition, categories, collection_id);
+                    transactions.add(new Transaction(book_id, user, getUser(buyer_id), date, book, status));
+                }
             }
+
             cacheManager.put(cacheKey, transactions);
         } catch (Exception e) {
             e.printStackTrace();
         }
         return transactions;
     }
-    public TableView<Transaction> getTransactionTable(User user) {
+    public static TableView<Transaction> getTransactionTable(User user) {
         TableView<Transaction> tableView = new TableView<>();
         tableView.setStyle("fx-background-color: #fff");
         tableView.setEditable(false);
@@ -378,5 +464,51 @@ public class JDBCConnection {
 
         tableView.setItems(transactions);
         return tableView;
+    }
+
+    public boolean updateBookStatus(int bookID, String status){
+        String updateStatusQuery = "UPDATE books SET book_status = ? WHERE book_id = ?"; //query to update book status
+
+        try  (Connection connection = getConnection(); PreparedStatement preparedStatement = connection.prepareStatement(updateStatusQuery)){
+            preparedStatement.setString(1, status);
+            preparedStatement.setInt(2, bookID);
+
+            int rowsUpdated = preparedStatement.executeUpdate();
+
+            return rowsUpdated > 0;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+    public boolean deleteUser(int userID) {
+        String deleteUserQuery = "DELETE FROM users WHERE id = ?"; //delete query for database
+
+        try(Connection connection =  DriverManager.getConnection("jdbc:mysql://bookbetter-aws.czoua2woyqte.us-east-2.rds.amazonaws.com:3306/user", "admin", "!!mqsqlhubbard2024");
+            PreparedStatement deleteStatement = connection.prepareStatement((deleteUserQuery))){ //create a connection into the system and run the query
+
+            deleteStatement.setInt(1, userID); //set the parameters of the statement, more specifically which user to delete
+
+            int numOfRowsAffected = deleteStatement.executeUpdate(); //execute the delete and show how many rows have been affected by deleting the user (should be just 1)
+
+            return numOfRowsAffected > 0; //return true if at least one row has been impacted
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+    public boolean changePassword(User user, String newPassword) {
+        String changePasswordQuery = "UPDATE users SET password = ? WHERE id = ?";
+        try (Connection newConnection = getConnection()) {
+            PreparedStatement changePasswordStatement = newConnection.prepareStatement(changePasswordQuery);
+            changePasswordStatement.setString(1, newPassword);
+            changePasswordStatement.setInt(2, user.getId());
+            int numOfRowsAffected = changePasswordStatement.executeUpdate();
+            return numOfRowsAffected > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 }

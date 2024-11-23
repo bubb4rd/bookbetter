@@ -355,8 +355,6 @@ public class SellerView {
                } catch (NumberFormatException ex) {
                    Error invalidPriceError = new Error("Submission error: Invalid price");
                    invalidPriceError.displayError(pane, mainScene);
-               } catch (SQLException ex) {
-                   throw new RuntimeException(ex);
                }
            }
         });
