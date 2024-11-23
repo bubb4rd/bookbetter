@@ -343,99 +343,14 @@ public class SellerView {
         return pane;
     }
 
-    public AnchorPane getEditBook(Scene mainScene, String name, String author, String condition, ArrayList<String> categories) {
-        AnchorPane pane = new AnchorPane();
-        Label titleLabel = new Label("List a Book");
-        titleLabel.getStyleClass().add("h1");
-        titleLabel.setPadding(new Insets(20, 20, 20, 20));
-
-        Label subtitleLabel = new Label("Sell a new book.");
-
-        VBox listBlurb = new VBox();
-        listBlurb.getStyleClass().add("blurb");
-        listBlurb.getStyleClass().add("tall");
-        listBlurb.setSpacing(10.0);
-        listBlurb.setPadding(new Insets(20, 20, 20, 20));
-
-        VBox bookNameVBox = new VBox();
-        bookNameVBox.setSpacing(4.0);
-
-        Label bookNameLabel = new Label("Book Name");
-        bookNameLabel.getStyleClass().add("h3");
-
-        TextField bookNameInput = new TextField();
-        bookNameInput.setPromptText("Enter a book name");
-        bookNameInput.getStyleClass().addAll("gray-border", "text-lg", "input");
-
-        bookNameVBox.getChildren().addAll(bookNameLabel, bookNameInput);
-
-        VBox author = new VBox();
-        author.setSpacing(4.0);
-
-        Label authorNameLabel = new Label("Author");
-        authorNameLabel.getStyleClass().add("h3");
-
-        TextField authorNameInput = new TextField();
-        authorNameInput.setPromptText("Enter the author name");
-        authorNameInput.getStyleClass().addAll("gray-border", "text-lg", "input");
-
-        author.getChildren().addAll(authorNameLabel, authorNameInput);
-
-        VBox conditionContainer = new VBox();
-        conditionContainer.setSpacing(4.0);
-
-        Label conditionNameLabel = new Label("Condition");
-        conditionNameLabel.getStyleClass().add("h3");
-
-        HBox condition = new HBox();
-        condition.setSpacing(10);
-        ComboBox<String> conditionCombo = new ComboBox();
-        conditionCombo.getStyleClass().addAll("gray-border", "text-lg", "input");
-
-
-        conditionCombo.setValue("Choose Book Condition");
-        conditionCombo.getItems().addAll("Lightly used", "Moderately used", "Heavily used ");
-
-        Button chooseImageButton = new Button("Choose Image + ");
-        chooseImageButton.getStyleClass().add("secondary");
-        chooseImageButton.setPrefWidth(150);
-        chooseImageButton.setPrefHeight(60);
-
-        AtomicReference<File> imageFile = new AtomicReference<>();
-        chooseImageButton.setOnAction(e -> {
-            FileChooser imageChooser = new FileChooser();
-            imageChooser.getExtensionFilters().addAll(
-                    new FileChooser.ExtensionFilter("Image Files", "*.jpg", "*.png")
-            );
-            imageFile.set(imageChooser.showOpenDialog(sceneController.getStage()));
-            if (imageFile.get() != null) {
-                chooseImageButton.setText(imageFile.get().getName());
-            }
-        });
-
-
-        condition.getChildren().addAll((Node) conditionCombo, chooseImageButton);
-        conditionContainer.getChildren().addAll(conditionNameLabel, condition);
-        ArrayList<ToggleButton> allCategories = new ArrayList<>();
-        ArrayList<String> selectedCategories = new ArrayList<>();
-        ToggleButton natScienceButton = new ToggleButton("Natural Science");
-        natScienceButton.getStyleClass().add("toggle-button");
-        allCategories.add(natScienceButton);
-        ToggleButton computerButton = new ToggleButton("Computer");
-        computerButton.getStyleClass().add("toggle-button");
-        allCategories.add(computerButton);
-
-        ToggleButton mathButton = new ToggleButton("Math");
-        mathButton.getStyleClass().add("toggle-button");
-        allCategories.add(mathButton);
-
-        ToggleButton englishLangButton = new ToggleButton("English Language");
-        englishLangButton.getStyleClass().add("toggle-button");
-        allCategories.add(englishLangButton);
-
-        ToggleButton scifiButton = new ToggleButton("Sci-Fi");
-        scifiButton.getStyleClass().add("toggle-button");
-        allCategories.add(scifiButton);
+    private double calculateNewPrice(double ogPrice, String bookCondition) {
+        return switch (bookCondition){
+            case "Heavily Used" -> ogPrice * 0.5;
+            case "Moderately Used" -> ogPrice * 0.75;
+            case "Lightly Used" -> ogPrice * 0.9;
+            default -> ogPrice;
+        };
+    }
 
         ToggleButton artButton = new ToggleButton("Art");
         artButton.getStyleClass().add("toggle-button");
