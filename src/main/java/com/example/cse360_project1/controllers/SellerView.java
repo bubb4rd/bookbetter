@@ -321,13 +321,22 @@ public class SellerView {
                Error imageError = new Error("Submit error: Image failed");
                imageError.displayError(pane, mainScene);
            } else {
-               Book newBook = new Book(user.getId(), bookName, bookAuthor, bookCondition, bookCategories, user.getId(), imageFile.get());
-               JDBCConnection connection = new JDBCConnection();
-               if (connection.addBook(newBook)) {
-                   System.out.println("Book added: " + newBook.getName());
+               try {
+                   Book newBook = new Book(user.getId(), bookName, bookAuthor, bookCondition, bookCategories, user.getId(), imageFile.get());
+                   double ogPrice = Double.parseDouble(ogPriceInput.getText());
+                   double newPrice = calculateNewPrice(ogPrice, bookCondition);
 
-                   this.tab = "LIST_SUCCESS";
-                   sceneController.switchScene(getScene());
+                   JDBCConnection connection = new JDBCConnection();
+                   if (connection.addBook(newBook)) {
+                       System.out.println("Book added: " + newBook.getName());
+                       this.tab = "LIST_SUCCESS";
+                       sceneController.switchScene(getScene());
+                   }
+               } catch (NumberFormatException ex) {
+                   Error invalidPriceError = new Error("Submission error: Invalid price");
+                   invalidPriceError.displayError(pane, mainScene);
+               } catch (SQLException ex) {
+                   throw new RuntimeException(ex);
                }
            }
         });
