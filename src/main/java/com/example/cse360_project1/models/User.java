@@ -3,6 +3,7 @@ package com.example.cse360_project1.models;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class User {
@@ -83,6 +84,22 @@ public class User {
         }
 
         return conditionsCount;
+    }
+
+    //get all users in the system database and put them into an array list of users
+    public List<User> getAllUsers() throws SQLException{
+        List<User> users = new ArrayList<>();
+        Connection connection =  DriverManager.getConnection("jdbc:mysql://bookbetter-aws.czoua2woyqte.us-east-2.rds.amazonaws.com:3306/user", "admin", "!!mqsqlhubbard2024");
+
+        String userQuery = "SELECT * FROM users"; //query to collect all users from the users table
+
+        try(PreparedStatement statement = connection.prepareStatement(userQuery); ResultSet rs = statement.executeQuery()) { //execute the query statement
+            while(rs.next()){
+                users.add(new User(rs.getInt("id"), rs.getString("username"), rs.getString("type"), rs.getString("password"))); //create a new user objects and create it from the database informatino for eah uniq user
+            }
+        }
+
+        return users; //return the array list
     }
 
     @Override

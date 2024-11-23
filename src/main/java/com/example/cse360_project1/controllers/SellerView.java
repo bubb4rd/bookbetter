@@ -60,18 +60,13 @@ public class SellerView {
     }
 
     private AnchorPane getContentPane(Scene mainScene) {
-        switch (tab) {
-            case "LIST":
-                return getListBook(mainScene);
-            case "TRANSACTIONS":
-                return getTransactions(mainScene);
-            case "EDIT LISTINGS":
-                return getEditListings(mainScene);
-            case "LIST_SUCCESS":
-                return getListBookSuccess();
-            default:
-                return getDashboard(mainScene);
-        }
+        return switch (tab) {
+            case "LIST" -> getListBook(mainScene);
+            case "TRANSACTIONS" -> getTransactions(mainScene);
+            case "EDIT LISTINGS" -> getEditListings(mainScene);
+            case "LIST_SUCCESS" -> getListBookSuccess();
+            default -> getDashboard(mainScene);
+        };
     }
 
     public HBox getOrderHBox(Transaction transaction) {
@@ -270,7 +265,7 @@ public class SellerView {
         conditionCombo.getStyleClass().addAll("gray-border", "text-lg", "input");
 
 
-        conditionCombo.setValue("Choose Account Type");
+        conditionCombo.setValue("Choose Book Condition");
         conditionCombo.getItems().addAll("Lightly used", "Moderately used", "Heavily used ");
 
         Button chooseImageButton = new Button("Choose Image + ");
@@ -372,14 +367,14 @@ public class SellerView {
            String bookAuthor = authorNameInput.getText();
            String bookCondition = conditionCombo.getValue();
            String bookCategories = Arrays.toString(selectedCategories.toArray());
-           if (bookName.isEmpty() || bookAuthor.isEmpty()  || bookCategories.isEmpty() || bookCondition.equals("Choose Account Type")) {
+           if (bookName.isEmpty() || bookAuthor.isEmpty() || bookCondition.isEmpty() || bookCategories.isEmpty() || bookCondition.equals("Choose Book Condition")) {
                Error emptyFieldError = new Error("Submit error: One or more empty field");
                emptyFieldError.displayError(pane, mainScene);
            } else if (imageFile.get() == null) {
                Error imageError = new Error("Submit error: Image failed");
                imageError.displayError(pane, mainScene);
            } else {
-               Book newBook = new Book( user.getId(), bookName, bookAuthor, bookCondition, bookCategories, user.getId());
+               Book newBook = new Book(user.getId(), bookName, bookAuthor, bookCondition, bookCategories, user.getId(), imageFile.get());
                JDBCConnection connection = new JDBCConnection();
                if (connection.addBook(newBook)) {
                    System.out.println("Book added: " + newBook.getName());
@@ -449,59 +444,74 @@ public class SellerView {
 
     public AnchorPane getEditListings(Scene mainScene) {
         AnchorPane pane = new AnchorPane();
+        //Title
         Label titleLabel = new Label("Edit Listings");
-        titleLabel.getStyleClass().add("h1");
-        titleLabel.setPadding(new Insets(20, 20, 20, 20));
+        titleLabel.setStyle("-fx-font-size: 24px; -fx-font-weight: bold;");
+        titleLabel.setPadding(new Insets(20));
 
-        VBox contentBox = new VBox();
-        contentBox.setPadding(new Insets(20, 20, 20, 20));
-        contentBox.getStyleClass().add("blurb");
+        //Book list
+        VBox bookListBox = new VBox(10);
+        bookListBox.setPadding(new Insets(20));
+        bookListBox.setSpacing(10);
+        Label selectBookLabel = new Label("Select a Book");
+        selectBookLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
+//      bookListBox.getChildren().addAll(selectBookLabel, bookListView, editButton);
+
+//        VBox contentBox = new VBox();
+//        contentBox.setPadding(new Insets(10, 10, 10, 10));
+//        contentBox.getStyleClass().add("blurb");
 
         //Get the user's listed books
+        ListView<Book> bookListView = new ListView<>();
         JDBCConnection jdbcConnection = new JDBCConnection();
         ArrayList<Book> userBooks = jdbcConnection.getBookCollection(user);
+
         //If user does not have books listed
         if (userBooks.isEmpty()) {
             // No books listed
             Label noBooksLabel = new Label("You currently have no books listed for sale.");
             noBooksLabel.getStyleClass().add("h2");
-            contentBox.getChildren().add(noBooksLabel);
-        }
-        else{
-            //List of books
-            Label selectBookLabel = new Label("Select a Book");
-            selectBookLabel.getStyleClass().add("h3");
-            ListView<Book> bookListView = new ListView<>();
+            bookListBox.getChildren().addAll(selectBookLabel, noBooksLabel);
+        } else {
             bookListView.getItems().addAll(userBooks);
-
+            // Edit button
             Button editButton = new Button("Edit Selected Book");
             editButton.getStyleClass().add("primary");
 
             // Book details
             VBox detailsForm = new VBox(10);
+            detailsForm.setPadding(new Insets(10));
+            detailsForm.setVisible(false);
 
+            // Button action for editing a book
             editButton.setOnAction(e -> {
                 Book selectedBook = bookListView.getSelectionModel().getSelectedItem();
                 if (selectedBook == null) {
                     Error noSelectionError = new Error("Please select a book to edit.");
                     noSelectionError.displayError(pane, mainScene);
-                }
-                else{
-                    populatedEditForm(detailsForm, selectedBook, jdbcConnection);
+                } else {
+                    detailsForm.setVisible(true);
+                    populatedEditForm(pane, detailsForm, selectedBook, jdbcConnection);
                 }
             });
 
-            contentBox.getChildren().addAll(selectBookLabel, bookListView, editButton, detailsForm);
+            bookListBox.getChildren().addAll(selectBookLabel, bookListView, editButton);
+            bookListBox.getChildren().add(detailsForm); // Add the form to the layout
         }
 
-        pane.getChildren().addAll(titleLabel, contentBox);
-        AnchorPane.setTopAnchor(titleLabel, 300.0);
-        AnchorPane.setLeftAnchor(titleLabel, 200.0);
-        AnchorPane.setTopAnchor(contentBox, 300.0);
+        HBox mainContentBox = new HBox(20);
+        mainContentBox.setPadding(new Insets(20));
+        mainContentBox.getChildren().add(bookListBox);
+
+        pane.getChildren().addAll(titleLabel, mainContentBox);
+        AnchorPane.setTopAnchor(titleLabel, 30.0);
+        AnchorPane.setLeftAnchor(titleLabel, 50.0);
+        AnchorPane.setTopAnchor(mainContentBox, 100.0);
+        AnchorPane.setLeftAnchor(mainContentBox, 50.0);
         return pane;
     }
 
-    private void populatedEditForm(VBox detailsForm, Book book, JDBCConnection jdbcConnection) {
+    private void populatedEditForm(AnchorPane parentPane, VBox detailsForm, Book book, JDBCConnection jdbcConnection) {
         detailsForm.getChildren().clear();
 
         //Name of book
@@ -520,10 +530,83 @@ public class SellerView {
         Label conditionLabel = new Label("Book Condition:");
         bookNameLabel.getStyleClass().add("h3");
         ComboBox<String> conditionComboBox = new ComboBox<>();
-        conditionComboBox.getItems().addAll("Lightly used", "moderately used", "Heavily used");
+        conditionComboBox.getItems().addAll("Lightly used", "Moderately used", "Heavily used");
         conditionComboBox.setValue(book.getCondition());
         conditionComboBox.getStyleClass().addAll("gray-border", "input");
+
+        Button saveButton = new Button("Save Changes");
+        saveButton.getStyleClass().add("primary");
+        saveButton.setOnAction(e -> {
+            String updatedName = bookNameField.getText();
+            String updatedAuthor = authorField.getText();
+            String updatedCondition = conditionComboBox.getValue();
+
+            if (updatedName.isEmpty() || updatedAuthor.isEmpty() || updatedCondition.isEmpty()) {
+                Error fieldError = new Error("Please fill out all fields before saving.");
+                fieldError.displayError(parentPane, null);
+            } else {
+                book.setName(updatedName);
+                book.setAuthor(updatedAuthor);
+                book.setCondition(updatedCondition);
+
+                try {
+                    int result = jdbcConnection.updateQuery(
+                            "UPDATE books SET book_name = '" + updatedName + "', book_author = '" + updatedAuthor +
+                            "', book_condition = '" + updatedCondition + "' WHERE book_id = " + book.getId()
+                    );
+                    if (result > 0) {
+                        Error successMessage = new Error("Book details updated successfully!");
+                        successMessage.displayError(parentPane, null);
+                    } else {
+                        Error updateError = new Error("Failed to update book details.");
+                        updateError.displayError(parentPane, null);
+                    }
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                }
+            }
+        });
+
+        detailsForm.getChildren().addAll(bookNameLabel, bookNameField, authorLabel, authorField, conditionLabel, conditionComboBox, saveButton);
     }
+
+//        Button saveButton = new Button("Save Changes");
+//        saveButton.getStyleClass().add("primary");
+//        saveButton.setOnAction(e -> {
+//            book.setName(bookNameField.getText());
+//            book.setAuthor(authorField.getText());
+//            book.setCondition(conditionComboBox.getValue());
+//            String updatedName = bookNameField.getText();
+//            String updatedAuthor = authorField.getText();
+//            String updatedCondition = conditionComboBox.getValue();
+//
+//            if (updatedName.isEmpty() || updatedAuthor.isEmpty() || updatedCondition.isEmpty()) {
+//                Error fieldError = new Error("Please enter all the fields to save your changes.");
+//                fieldError.displayError(parentPane, null);
+//            }
+//            else {
+//                book.setName(updatedName);
+//                book.setAuthor(updatedAuthor);
+//                book.setCondition(updatedCondition);
+//
+//                try {
+//                    if (jdbcConnection.updateQuery(
+//                            "UPDATE books SET book_name = '" + updatedName + "', book_author = '" + updatedAuthor +
+//                            "', book_condition = '" + updatedCondition + "' WHERE book_id = " + book.getId()) > 0) {
+//                        Error successMessage = new Error("Book details updated successfully!");
+//                        successMessage.displayError(parentPane, null);
+//                    }
+//                    else {
+//                        Error updateError = new Error("Failed to update book details.");
+//                        updateError.displayError(parentPane, null);
+//                    }
+//                } catch (SQLException ex) {
+//                    throw new RuntimeException(ex);
+//                }
+//            }
+//        });
+//        detailsForm.getChildren().addAll(bookNameLabel, bookNameField, authorLabel, conditionLabel, conditionComboBox);
+//    }
     public AnchorPane getTransactions(Scene mainScene) {
         AnchorPane pane = new AnchorPane();
         Label titleLabel = new Label("Transactions");

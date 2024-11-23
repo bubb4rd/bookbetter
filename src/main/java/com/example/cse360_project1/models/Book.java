@@ -21,14 +21,14 @@ public class Book {
 
 
 
-    public Book(int id, String name, String author, String condition, String categoiesJSON, int collectionID) {
+    public Book(int id, String name, String author, String condition, String categoriesJSON, int collectionID) {
         LocalDate today = LocalDate.now();
         this.date = today.toString();
         this.id = id;
         this.name = name;
         this.author = author;
         this.condition = condition;
-        this.categories = parseJSON(categoiesJSON);
+        this.categories = parseJSON(categoriesJSON);
         this.collectionID = collectionID;
         this.image = null;
 
@@ -38,12 +38,12 @@ public class Book {
             case "Heavily Used" -> this.price = 10.50;
         }
     }
-    public Book(int id, String name, String author, String condition, String categoiesJSON, int collectionID, File image) {
+    public Book(int id, String name, String author, String condition, String categoriesJSON, int collectionID, File image) {
         this.id = id;
         this.name = name;
         this.author = author;
         this.condition = condition;
-        this.categories = parseJSON(categoiesJSON);
+        this.categories = parseJSON(categoriesJSON);
         this.collectionID = collectionID;
         this.image = image;
         LocalDate today = LocalDate.now();
