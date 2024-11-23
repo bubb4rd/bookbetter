@@ -6,6 +6,14 @@ import com.example.cse360_project1.controllers.UserSettingsPage;
 import com.example.cse360_project1.models.Book;
 import com.example.cse360_project1.models.Transaction;
 import com.example.cse360_project1.models.User;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.scene.control.Button;
+import javafx.scene.control.TableCell;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
+import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.image.Image;
 
 import java.io.File;
@@ -275,5 +283,62 @@ public class JDBCConnection {
             e.printStackTrace();
         }
         return transactions;
+    }
+    public TableView<Transaction> getTransactionTable(User user) {
+        TableView<Transaction> tableView = new TableView<>();
+        tableView.setStyle("fx-background-color: #fff");
+        tableView.setEditable(false);
+        tableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        ObservableList<Transaction> data = FXCollections.observableArrayList();
+
+        TableColumn<Transaction, String> dateColumn = new TableColumn<>("Date");
+        dateColumn.setCellValueFactory(new PropertyValueFactory<>("date"));
+
+        TableColumn<Transaction, Integer> idColumn = new TableColumn<>("Transaction ID");
+        idColumn.setCellValueFactory(new PropertyValueFactory<>("id"));
+
+        TableColumn<Transaction, String> bookNameColumn = new TableColumn<>("Book Name");
+        bookNameColumn.setCellValueFactory(param -> {
+            return new SimpleStringProperty(param.getValue().getBook().getName());
+        });
+
+        TableColumn<Transaction, String> statusColumn = new TableColumn<>("Status");
+        statusColumn.setCellValueFactory(new PropertyValueFactory<>("status"));
+
+        TableColumn<Transaction, Double> priceColumn = new TableColumn<>("Price");
+        priceColumn.setCellValueFactory(new PropertyValueFactory<>("price"));
+
+        TableColumn<Transaction, Void> actionCol = new TableColumn<>("Action");
+
+        actionCol.setCellFactory(param -> new TableCell<>() {
+            private final Button actionButton = new Button("View");
+
+            {
+                actionButton.setOnAction(event -> {
+                    Transaction transaction = getTableView().getItems().get(getIndex());
+                    System.out.println("Processing transaction: " + transaction.getId());
+                });
+            }
+
+            @Override
+            protected void updateItem(Void item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty) {
+                    setGraphic(null);
+                } else {
+                    setGraphic(actionButton);
+                }
+            }
+        });
+
+        tableView.getColumns().addAll(dateColumn, idColumn, bookNameColumn, statusColumn, priceColumn, actionCol);
+
+        JDBCConnection connection = new JDBCConnection();
+        ObservableList<Transaction> transactions = FXCollections.observableArrayList(
+                connection.getAllTransactions(user)
+        );
+
+        tableView.setItems(transactions);
+        return tableView;
     }
 }

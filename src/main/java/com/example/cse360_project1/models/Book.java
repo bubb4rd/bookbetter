@@ -98,11 +98,11 @@ public class Book {
         categories.remove(category);
     }
     public String stringCategories(ArrayList<String> categories) {
-        String categoriesString = "Categories: ";
+        String categoriesString = "";
         for (String category : categories) {
             categoriesString += category + ", ";
         }
-        if (categoriesString.equals("Categories: ")) categoriesString = "Categories: None";
+        if (categoriesString.equals("")) categoriesString = "Categories: None";
         return categoriesString;
     }
 
