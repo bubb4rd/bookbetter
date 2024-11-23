@@ -220,11 +220,11 @@ public class JDBCConnection {
                 for (int i = 1; i < collectionIds.size(); i++) {
                     int collectionIdToDelete = collectionIds.get(i);
 
-                        // Check if the collection_id is referenced in the books table
-                        String referenceCheckQuery = "SELECT COUNT(*) FROM books WHERE collection_id = ?";
-                        PreparedStatement referenceCheckStatement = currentConnection.prepareStatement(referenceCheckQuery);
-                        referenceCheckStatement.setInt(1, collectionIdToDelete);
-                        ResultSet referenceResult = referenceCheckStatement.executeQuery();
+                    // Check if the collection_id is referenced in the books table
+                    String referenceCheckQuery = "SELECT COUNT(*) FROM books WHERE collection_id = ?";
+                    PreparedStatement referenceCheckStatement = currentConnection.prepareStatement(referenceCheckQuery);
+                    referenceCheckStatement.setInt(1, collectionIdToDelete);
+                    ResultSet referenceResult = referenceCheckStatement.executeQuery();
 
                         if (referenceResult.next() && referenceResult.getInt(1) == 0) {
                             // Safe to delete if not referenced
