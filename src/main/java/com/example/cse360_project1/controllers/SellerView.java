@@ -473,7 +473,7 @@ public class SellerView {
             bookListBox.getChildren().addAll(selectBookLabel, noBooksLabel);
         } else {
             bookListView.getItems().addAll(userBooks);
-
+            // Edit button
             Button editButton = new Button("Edit Selected Book");
             editButton.getStyleClass().add("primary");
 
