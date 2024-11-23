@@ -12,6 +12,13 @@ public class User {
     private String userType;
     private String password;
     private ArrayList<Book> books;
+    public User(String name) {
+        this.name = name;
+        this.id = 0;
+        this.userType = "SELLER";
+        this.password = "";
+        this.books = new ArrayList<>();
+    }
     public User(int id, String name, String userType, String password) {
         this.id = id;
         this.name = name;
