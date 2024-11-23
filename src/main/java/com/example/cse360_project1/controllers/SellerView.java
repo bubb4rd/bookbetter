@@ -342,8 +342,8 @@ public class SellerView {
                imageError.displayError(pane, mainScene);
            } else {
                try {
-                   Book newBook = new Book(user.getId(), bookName, bookAuthor, bookCondition, bookCategories, user.getId(), imageFile.get());
-                   double ogPrice = Double.parseDouble(ogPriceInput.getText());
+
+                   double ogPrice = Double.parseDouble(ogPriceText);
                    double newPrice = calculateNewPrice(ogPrice, bookCondition);
 
                    Book newBook = new Book(user.getId(), bookName, bookAuthor, bookCondition, bookCategories, user.getId(), imageFile.get());
