@@ -30,7 +30,7 @@ public class Book {
         this.condition = condition;
         this.categories = parseJSON(categoriesJSON);
         this.collectionID = collectionID;
-        this.image = getBookImageAsFile();
+        this.image = null;
 
         switch (condition) {
             case "New" -> this.price = 10.50 * 2;
@@ -98,11 +98,11 @@ public class Book {
         categories.remove(category);
     }
     public String stringCategories(ArrayList<String> categories) {
-        String categoriesString = "Categories: ";
+        String categoriesString = "";
         for (String category : categories) {
             categoriesString += category + ", ";
         }
-        if (categoriesString.equals("Categories: ")) categoriesString = "Categories: None";
+        if (categoriesString.equals("")) categoriesString = "Categories: None";
         return categoriesString;
     }
 
