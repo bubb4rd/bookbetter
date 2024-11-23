@@ -117,6 +117,9 @@ public class SupportPage {
         String css = getClass().getResource("/com/example/cse360_project1/css/UserSettings.css").toExternalForm();
         AnchorPane.setTopAnchor(supportLabel, 20.0);
         AnchorPane.setLeftAnchor(supportLabel, 50.0);
+        AnchorPane.setTopAnchor(formBox, 100.0);
+        AnchorPane.setLeftAnchor(formBox, 50.0);
+        AnchorPane.setRightAnchor(formBox, 50.0);
         pane.getStylesheets().add(css);
         return pane;
     }
