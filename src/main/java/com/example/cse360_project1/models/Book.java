@@ -34,11 +34,11 @@ public class Book {
         this.collectionID = collectionID;
         this.image = null;
 
-        switch (condition) {
-            case "New" -> this.price = 10.50 * 2;
-            case "Used" -> this.price = 10.50 * 1.5;
-            case "Heavily Used" -> this.price = 10.50;
-        }
+//        switch (condition) {
+//            case "New" -> this.price = 10.50 * 2;
+//            case "Used" -> this.price = 10.50 * 1.5;
+//            case "Heavily Used" -> this.price = 10.50;
+//        }
     }
     public Book(int id, String name, String author, String condition, String categoriesJSON, /*double ogPrice, double newPrice,*/ int collectionID, File image) {
         this.id = id;
