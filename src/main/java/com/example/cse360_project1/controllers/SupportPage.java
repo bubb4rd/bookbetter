@@ -33,7 +33,7 @@ public class SupportPage {
         AnchorPane.setLeftAnchor(sidePanel, 0.0);
         AnchorPane.setTopAnchor(sidePanel, 0.0);
         AnchorPane.setBottomAnchor(sidePanel, 0.0);
-        AnchorPane contentPane = contentPane(user);
+        AnchorPane contentPane = contentPane(mainScene, user);
         AnchorPane.setTopAnchor(contentPane, 0.0);
         AnchorPane.setLeftAnchor(contentPane, 200.0);
         AnchorPane.setBottomAnchor(contentPane, 0.0);
