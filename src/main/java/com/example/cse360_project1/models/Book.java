@@ -30,7 +30,7 @@ public class Book {
         this.condition = condition;
         this.categories = parseJSON(categoiesJSON);
         this.collectionID = collectionID;
-        this.image = getBookImageAsFile();
+        this.image = null;
 
         switch (condition) {
             case "New" -> this.price = 10.50 * 2;

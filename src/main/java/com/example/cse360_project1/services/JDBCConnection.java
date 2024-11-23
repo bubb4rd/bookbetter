@@ -20,6 +20,7 @@ public class JDBCConnection {
     Connection connection;
     ResultSet result;
     Exception error;
+    private SimpleCache cacheManager = SimpleCache.getInstance();
     public JDBCConnection() {
 
     }
@@ -243,10 +244,18 @@ public class JDBCConnection {
         }
         return books;
     }
-    public ArrayList<Transaction> getAllTransactions(User user)  {
+    public ArrayList<Transaction> getAllTransactions(User user) {
+        String cacheKey = "transactions_" + user.getId();
+        ArrayList<Transaction> cachedTransactions = (ArrayList<Transaction>) cacheManager.get(cacheKey);
+
+        if (cachedTransactions != null) {
+            return cachedTransactions;
+        }
+
         ArrayList<Transaction> transactions = new ArrayList<>();
         try(Connection connection = getConnection()) {
-            PreparedStatement preparedStatement = connection.prepareStatement("SELECT * FROM books WHERE collection_id=" + user.getId());
+            PreparedStatement preparedStatement = connection.prepareStatement("SELECT * FROM books WHERE collection_id=?");
+            preparedStatement.setInt(1, user.getId());
             ResultSet resultSet = preparedStatement.executeQuery();
             while (resultSet.next()) {
                 int book_id = resultSet.getInt("book_id");
@@ -256,17 +265,15 @@ public class JDBCConnection {
                 String book_condition = resultSet.getString("book_condition");
                 String categories = resultSet.getString("book_categories");
                 String status = resultSet.getString("book_status");
-
                 int buyer_id = resultSet.getInt("buyer_id");
                 String date = resultSet.getString("date");
                 Book book = new Book(book_id, book_name, book_author, book_condition, categories, collection_id);
                 transactions.add(new Transaction(book_id, user, getUser(buyer_id), date, book, status));
             }
-        }
-        catch (Exception e) {
+            cacheManager.put(cacheKey, transactions);
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return transactions;
-
     }
 }
