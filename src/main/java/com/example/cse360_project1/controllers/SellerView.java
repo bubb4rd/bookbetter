@@ -494,10 +494,15 @@ public class SellerView {
             contentBox.getChildren().addAll(selectBookLabel, bookListView, editButton, detailsForm);
         }
 
-        pane.getChildren().addAll(titleLabel, contentBox);
-        AnchorPane.setTopAnchor(titleLabel, 300.0);
-        AnchorPane.setLeftAnchor(titleLabel, 200.0);
-        AnchorPane.setTopAnchor(contentBox, 300.0);
+        HBox mainContentBox = new HBox(20);
+        mainContentBox.setPadding(new Insets(20));
+        mainContentBox.getChildren().add(bookListBox);
+
+        pane.getChildren().addAll(titleLabel, mainContentBox);
+        AnchorPane.setTopAnchor(titleLabel, 30.0);
+        AnchorPane.setLeftAnchor(titleLabel, 50.0);
+        AnchorPane.setTopAnchor(mainContentBox, 100.0);
+        AnchorPane.setLeftAnchor(mainContentBox, 50.0);
         return pane;
     }
 
