@@ -183,12 +183,12 @@ public class JDBCConnection {
         return false;
     };
     public boolean addBook(Book book) {
-            try (Connection currentConnection = getConnection()) {
-                // Check for multiple collection_ids for the user
-                String checkQuery = "SELECT collection_id FROM book_collections WHERE user_id = ? ORDER BY collection_id ASC";
-                PreparedStatement checkStatement = currentConnection.prepareStatement(checkQuery);
-                checkStatement.setInt(1, book.getCollectionID()); // Assuming book.getCollectionID() returns the user_id
-                ResultSet rs = checkStatement.executeQuery();
+        try (Connection currentConnection = getConnection()) {
+            // Check for multiple collection_ids for the user
+            String checkQuery = "SELECT collection_id FROM book_collections WHERE user_id = ? ORDER BY collection_id ASC";
+            PreparedStatement checkStatement = currentConnection.prepareStatement(checkQuery);
+            checkStatement.setInt(1, book.getCollectionID()); // Assuming book.getCollectionID() returns the user_id
+            ResultSet rs = checkStatement.executeQuery();
 
             List<Integer> collectionIds = new ArrayList<>();
             while (rs.next()) {
