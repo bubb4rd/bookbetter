@@ -134,7 +134,12 @@ public class JDBCConnection {
         try {
             // Check if user has a book collection associated with their ID else create one
             if (!bookCollectionExists(book)) {
-                updateQuery("INSERT INTO book_collections (user_id) VALUE (" + book.getCollectionID() + ")");
+                int userId = book.getCollectionID();
+                int insertResult = updateQuery("INSERT INTO book_collections (collection_id, user_id) VALUES (" + userId + ", " + userId + ")");
+                if (insertResult <= 0){
+                    System.out.println("Failed to create a book collection.");
+                    return false;
+                }
             }
             if (book.getImage() == null) results = updateQuery("INSERT INTO books (collection_id, book_author, book_name, book_condition, book_categories) VALUES ('" + book.getCollectionID() + "', '" + book.getAuthor() + "', " + book.getCondition() + ", '" + book.getCategories() + "')");
             else {
