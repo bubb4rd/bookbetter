@@ -257,6 +257,7 @@ public class JDBCConnection {
                 preparedStatement.setString(5, book.categoriesToJSON(book.getCategories()));
                 preparedStatement.setBinaryStream(6, fileInputStream, (int) imageFile.length());
                 preparedStatement.setString(7, book.getDate());
+                preparedStatement.setDouble(8, book.getPrice());
                 cacheManager.clear(ALL_BOOKS_CACHE_KEY);
                 return preparedStatement.executeUpdate() > 0;
             } catch (IOException e) {
