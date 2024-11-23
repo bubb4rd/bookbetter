@@ -254,8 +254,10 @@ public class JDBCConnection {
                 preparedStatement.setNull(6, Types.BLOB);
             }
             preparedStatement.setString(7, book.getDate());
-            cacheManager.clear(ALL_BOOKS_CACHE_KEY);
-            return preparedStatement.executeUpdate() > 0;
+            preparedStatement.setDouble(8, book.getPrice()); // Include the calculated price here
+
+            int rowsInserted = preparedStatement.executeUpdate();
+            return rowsInserted > 0; // Return true if insertion is successful
         } catch (SQLException | FileNotFoundException e) {
             e.printStackTrace();
             return false;
