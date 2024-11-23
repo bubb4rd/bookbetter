@@ -28,6 +28,13 @@ The MySQL database requires a driver to be connected to the Java project. In you
 
 </ul>
 
+IDEA build path: https://youtu.be/3tcIrNaxXxw
+
+<br/>
+
+Eclipse build path: https://youtu.be/fCDhLry_JW4
+
+
 ## Structure
 The classes are split up based on how we interpret their uses in the project. 
 ### Models
