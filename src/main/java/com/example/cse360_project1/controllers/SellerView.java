@@ -373,7 +373,7 @@ public class SellerView {
             case "Heavily Used" -> ogPrice * 0.5;
             case "Moderately Used" -> ogPrice * 0.75;
             case "Lightly Used" -> ogPrice * 0.9;
-            default -> ogPrice;
+            default -> 0.0;
         };
     }
 
