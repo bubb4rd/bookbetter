@@ -5,6 +5,7 @@ import com.example.cse360_project1.models.Error;
 import com.example.cse360_project1.models.Transaction;
 import com.example.cse360_project1.models.User;
 import com.example.cse360_project1.services.JDBCConnection;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
@@ -14,6 +15,7 @@ import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.chart.PieChart;
 import javafx.scene.control.*;
+import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.*;
 import javafx.stage.FileChooser;
 
@@ -58,16 +60,13 @@ public class SellerView {
     }
 
     private AnchorPane getContentPane(Scene mainScene) {
-        switch (tab) {
-            case "LIST":
-                return getListBook(mainScene);
-            case "TRANSACTIONS":
-                return getTransactions(mainScene);
-            case "LIST_SUCCESS":
-                return getListBookSuccess();
-            default:
-                return getDashboard(mainScene);
-        }
+        return switch (tab) {
+            case "LIST" -> getListBook(mainScene);
+            case "TRANSACTIONS" -> getTransactions(mainScene);
+            case "EDIT LISTINGS" -> getEditListings(mainScene);
+            case "LIST_SUCCESS" -> getListBookSuccess();
+            default -> getDashboard(mainScene);
+        };
     }
 
     public HBox getOrderHBox(Transaction transaction) {
@@ -93,10 +92,62 @@ public class SellerView {
         return hBox;
     }
 
-    public VBox getAllOrders(User user) {
-        VBox orderVBox = new VBox();
+    public TableView<Transaction> getAllOrders(User user) {
+        TableView<Transaction> tableView = new TableView<>();
+        tableView.setStyle("fx-background-color: #fff");
+        tableView.setEditable(false);
+        tableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        ObservableList<Transaction> data = FXCollections.observableArrayList();
 
-        return orderVBox;
+        TableColumn<Transaction, String> dateColumn = new TableColumn<>("Date");
+        dateColumn.setCellValueFactory(new PropertyValueFactory<>("date"));
+
+        TableColumn<Transaction, Integer> idColumn = new TableColumn<>("Transaction ID");
+        idColumn.setCellValueFactory(new PropertyValueFactory<>("id"));
+
+        TableColumn<Transaction, String> bookNameColumn = new TableColumn<>("Book Name");
+        bookNameColumn.setCellValueFactory(param -> {
+            return new SimpleStringProperty(param.getValue().getBook().getName());
+        });
+
+        TableColumn<Transaction, String> statusColumn = new TableColumn<>("Status");
+        statusColumn.setCellValueFactory(new PropertyValueFactory<>("status"));
+
+        TableColumn<Transaction, Double> priceColumn = new TableColumn<>("Price");
+        priceColumn.setCellValueFactory(new PropertyValueFactory<>("price"));
+
+        TableColumn<Transaction, Void> actionCol = new TableColumn<>("Action");
+
+        actionCol.setCellFactory(param -> new TableCell<>() {
+            private final Button actionButton = new Button("View");
+
+            {
+                actionButton.setOnAction(event -> {
+                    Transaction transaction = getTableView().getItems().get(getIndex());
+                    System.out.println("Processing transaction: " + transaction.getId());
+                });
+            }
+
+            @Override
+            protected void updateItem(Void item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty) {
+                    setGraphic(null);
+                } else {
+                    setGraphic(actionButton);
+                }
+            }
+        });
+
+        tableView.getColumns().addAll(dateColumn, idColumn, bookNameColumn, statusColumn, priceColumn, actionCol);
+
+        JDBCConnection connection = new JDBCConnection();
+        ObservableList<Transaction> transactions = FXCollections.observableArrayList(
+                connection.getAllTransactions(user)
+        );
+
+        tableView.setItems(transactions);
+        return tableView;
     }
 
     public AnchorPane getDashboard(Scene mainScene) {
@@ -138,25 +189,12 @@ public class SellerView {
 
         HBox headerBox = new HBox();
         headerBox.setPadding(new Insets(0, 0, 10, 0));
-        // Keep gap in between
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
         headerBox.getChildren().addAll(recentOrdersLabel, spacer, viewAllButton);
 
-        TableView orderTable = new TableView();
-
-        orderTable.setEditable(false);
-        orderTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
-        TableColumn dateColumn = new TableColumn("Date");
-        TableColumn orderNumColumn = new TableColumn("Order num");
-        TableColumn bookNameColumn = new TableColumn("Book name");
-        TableColumn statusColumn = new TableColumn("Status");
-        TableColumn priceColumn = new TableColumn("Price");
-
-        ObservableList<Transaction> data = FXCollections.observableArrayList();
-        orderTable.getColumns().addAll(dateColumn, orderNumColumn, bookNameColumn, statusColumn, priceColumn);
-
-        recentOrders.getChildren().addAll(headerBox, orderTable);
+        TableView<Transaction> tableView = getAllOrders(user);
+        recentOrders.getChildren().addAll(headerBox, tableView);
 
 
         pane.getChildren().addAll(titleLabel, subtitleLabel, totalRevenue, recentOrders);
@@ -329,14 +367,14 @@ public class SellerView {
            String bookAuthor = authorNameInput.getText();
            String bookCondition = conditionCombo.getValue();
            String bookCategories = Arrays.toString(selectedCategories.toArray());
-           if (bookName.isEmpty() || bookAuthor.isEmpty() || bookCondition.isEmpty() || bookCategories.isEmpty() || bookCondition.equals("Choose Account Type")) {
+           if (bookName.isEmpty() || bookAuthor.isEmpty()  || bookCategories.isEmpty() || bookCondition.equals("Choose Account Type")) {
                Error emptyFieldError = new Error("Submit error: One or more empty field");
                emptyFieldError.displayError(pane, mainScene);
            } else if (imageFile.get() == null) {
                Error imageError = new Error("Submit error: Image failed");
                imageError.displayError(pane, mainScene);
            } else {
-               Book newBook = new Book(user.getId(), bookName, bookAuthor, bookCondition, bookCategories, user.getId(), imageFile.get());
+               Book newBook = new Book( user.getId(), bookName, bookAuthor, bookCondition, bookCategories, user.getId());
                JDBCConnection connection = new JDBCConnection();
                if (connection.addBook(newBook)) {
                    System.out.println("Book added: " + newBook.getName());

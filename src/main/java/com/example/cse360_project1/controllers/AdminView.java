@@ -1,15 +1,32 @@
 package com.example.cse360_project1.controllers;
 
+import com.example.cse360_project1.models.Book;
 import com.example.cse360_project1.models.User;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.control.Label;
+import javafx.scene.control.*;
+import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.VBox;
+import javafx.stage.Stage;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class AdminView {
     private final User user;
     private final SceneController sceneController;
     private String tab;
+
+    private TableView<User> allUsersTable; //create a private table view
 
     public AdminView(User user, SceneController sceneController) {
         this.user = user;
@@ -95,14 +112,223 @@ public class AdminView {
         titleLabel.setPadding(new Insets(20, 20, 20, 20));
         Label subtitleLabel = new Label("View and manage users");
 
-        pane.getChildren().addAll(titleLabel, subtitleLabel);
+        List<User> allUsersList;
+
+        try{
+            User allUsers = new User(0, "allUsers", "admin", "1234"); //create a new temporary user
+            allUsersList = allUsers.getAllUsers(); //get all users from the system database
+        } catch (SQLException e) { //check for any errors when getting all users in the system
+            e.printStackTrace();
+            allUsersList = new ArrayList<>();
+        }
+
+        //Create the new table
+        allUsersTable = createUserTable(allUsersList);
+        allUsersTable.setPrefWidth(600);
+        allUsersTable.setPrefHeight(500);
+        allUsersTable.setEditable(false);
+        viewUserDetails(allUsersTable);
+
+        pane.getChildren().addAll(titleLabel, subtitleLabel, allUsersTable);
         String css = getClass().getResource("/com/example/cse360_project1/css/UserSettings.css").toExternalForm();
         AnchorPane.setTopAnchor(titleLabel, 30.0);
         AnchorPane.setLeftAnchor(titleLabel, 50.0);
         AnchorPane.setTopAnchor(subtitleLabel, 75.0);
         AnchorPane.setLeftAnchor(subtitleLabel, 50.0);
+        AnchorPane.setTopAnchor(allUsersTable, 120.0);
+        AnchorPane.setLeftAnchor(allUsersTable, 50.0);
         pane.getStylesheets().add(css);
         return pane;
+
+    }
+
+    //Create the User Table for all users currently in the system
+    private TableView<User> createUserTable(List<User> allUserList){
+        TableView<User> userTableView = new TableView<>();
+
+        //Create the unique userID column
+        TableColumn<User, Integer> idColumn = new TableColumn<>("User ID");
+        idColumn.setCellValueFactory(new PropertyValueFactory<>("id"));
+
+        //Create the username column
+        TableColumn<User, String> usernameColumn = new TableColumn<>("Username");
+        usernameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
+        usernameColumn.setPrefWidth(100);
+
+        //Create the user type column
+        TableColumn<User, String> typeColumn = new TableColumn<>("Type");
+        typeColumn.setCellValueFactory(new PropertyValueFactory<>("userType"));
+        typeColumn.setPrefWidth(100);
+
+        //add all columns into the table
+        userTableView.getColumns().addAll(idColumn, usernameColumn, typeColumn);
+
+        //Create a new observable list for all user data using the user list
+        ObservableList<User> userData = FXCollections.observableArrayList(allUserList);
+        userTableView.setItems(userData);
+
+        //return the new table view
+        return userTableView;
+    }
+
+    //allow the admin user to expand the user information in the table to a new stage
+    private void viewUserDetails(TableView<User> tableView) {
+        tableView.setRowFactory(e -> {
+            TableRow<User> row = new TableRow<>();
+            //if the admin user clicks on a specific row, ensure that the new stage with all user informatino is shown
+            row.setOnMouseClicked(event -> {
+                if (event.getClickCount() == 2 && (!row.isEmpty())) {
+                    User selectedUser = row.getItem();
+                    showUserDetails(selectedUser);
+                }
+            });
+            return row;
+        });
+    }
+
+
+    private void showUserDetails(User user) {
+        Stage stage = new Stage();
+        stage.setTitle("User Details"); //Create the User Details Page
+
+        VBox vbox = new VBox(10);
+        vbox.setPadding(new Insets(20));
+
+        //Create the main title for the page
+        Label titleLabel = new Label("User Information: ");
+        titleLabel.setStyle("-fx-font-size: 18px; -fx-font-weight: bold");
+        titleLabel.getStyleClass().add("h2");
+
+        //Create the ID section
+        Label idLabel = new Label("ID: ");
+        TextField userID = new TextField();
+        userID.setText(String.valueOf(user.getId()));
+        idLabel.getStyleClass().add("h2");
+        idLabel.setStyle("-fx-font-size: 12px");
+        userID.getStyleClass().add("h2");
+        userID.setEditable(false);
+
+        //Create the Username section
+        Label usernameLabel = new Label("Username: ");
+        TextField usernameField = new TextField();
+        usernameField.setText(user.getName());
+        usernameLabel.getStyleClass().add("h2");
+        usernameLabel.setStyle("-fx-font-size: 12px");
+        usernameField.getStyleClass().add("h2");
+        usernameField.setEditable(false);
+
+        //Create the User Type section
+        Label typeLabel = new Label("Type: ");
+        TextField userTypeField = new TextField();
+        userTypeField.setText(user.getUserType());
+        typeLabel.getStyleClass().add("h2");
+        typeLabel.setStyle("-fx-font-size: 12px");
+        userTypeField.getStyleClass().add("h2");
+        userTypeField.setEditable(false);
+
+        //Create the close button that closes the user information page
+        Button closeButton = new Button("Close");
+        closeButton.getStyleClass().add("h2");
+        closeButton.setOnAction(e -> stage.close());
+
+        //Create the remove button
+        Button removeButton = new Button("Remove");
+        removeButton.getStyleClass().add("h2");
+        removeButton.setOnAction(e -> {
+
+            //When the admin user clicks on the remove button, alert them requiring a confirmation
+            Alert removeUserConfirmation = new Alert(Alert.AlertType.CONFIRMATION);
+            removeUserConfirmation.setTitle("CONFIRM REMOVAL");
+            removeUserConfirmation.setHeaderText("Do you want to remove this user?");
+            removeUserConfirmation.setContentText("Once the user is removed, the action cannot be undone");
+
+            //Check if the admin user confirms they want to remove the user
+            removeUserConfirmation.showAndWait().ifPresent(response -> {
+                if(response == ButtonType.OK) {
+                    try {
+                        boolean isUserDeleted = deleteUser(user.getId()); //check if the user has been successfully deleted
+
+                        if (isUserDeleted) { //indicate that user has been deleted to the admin user
+                            Alert deletedUserAlert = new Alert(Alert.AlertType.INFORMATION);
+                            deletedUserAlert.setTitle("SUCCESSFUL REMOVAL");
+                            deletedUserAlert.setHeaderText("USER HAS BEEN REMOVED");
+                            deletedUserAlert.setContentText("The user has been removed from the system successfully");
+                            deletedUserAlert.showAndWait();
+
+                            refreshUserTable();
+                        } else { //indicate that the user has NOT been deleted to the admin user
+                            Alert didNotDeleteUserAlert = new Alert(Alert.AlertType.ERROR);
+                            didNotDeleteUserAlert.setTitle("FAILED REMOVAL");
+                            didNotDeleteUserAlert.setHeaderText("USER HAS NOT BEEN REMOVED");
+                            didNotDeleteUserAlert.setContentText("The user has not been removed from the system successfully");
+                            didNotDeleteUserAlert.showAndWait();
+                        }
+                    } catch (SQLException ex) { //catch any errors here
+                        ex.printStackTrace();
+                    }
+                }
+            });
+
+            stage.close(); //close the stage after all processes are conducted
+        });
+
+
+        //Create the general page setup for User Information
+        GridPane userInformationPane = new GridPane();
+        userInformationPane.setAlignment(Pos.CENTER);
+        userInformationPane.setHgap(15);
+        userInformationPane.setVgap(15);
+
+        userInformationPane.add(titleLabel, 0, 0);
+
+        userInformationPane.add(idLabel, 0, 1);
+        userInformationPane.add(userID, 1, 1);
+
+        userInformationPane.add(usernameLabel, 0, 2);
+        userInformationPane.add(usernameField, 1, 2);
+
+        userInformationPane.add(typeLabel, 0, 3);
+        userInformationPane.add(userTypeField, 1, 3);
+
+        userInformationPane.add(closeButton, 0, 4);
+        userInformationPane.add(removeButton, 1, 4);
+
+        Scene scene = new Scene(userInformationPane, 400, 200);
+        stage.setScene(scene);
+        stage.show();
+    }
+
+    //Refresh the user table after a user is removed from the system
+    private void refreshUserTable() {
+        List<User> updatedUsersList; //Create a new list to hold all the updated users after removal
+
+        try {
+            User tempUser = new User(0, "allUsers", "admin", "1234");
+            updatedUsersList = tempUser.getAllUsers(); //create a new temp user to get all users from the database after removal
+        } catch (SQLException e) { //show an error that getting all users was unsuccessful
+            e.printStackTrace();
+            updatedUsersList = new ArrayList<>();
+        }
+
+        if(allUsersTable != null){ //check that the user table exists
+            allUsersTable.getItems().clear(); //clear all items in the table
+            allUsersTable.getItems().addAll(updatedUsersList); //update the table with the updated users in the system after removal
+        }
+    }
+
+    //delete the user from the system
+    private boolean deleteUser(int userID) throws SQLException{
+        String deleteUserQuery = "DELETE FROM users WHERE id = ?"; //delete query for database
+
+        try(Connection connection =  DriverManager.getConnection("jdbc:mysql://bookbetter-aws.czoua2woyqte.us-east-2.rds.amazonaws.com:3306/user", "admin", "!!mqsqlhubbard2024");
+            PreparedStatement deleteStatement = connection.prepareStatement((deleteUserQuery))){ //create a connection into the system and run the query
+
+            deleteStatement.setInt(1, userID); //set the parameters of the statement, more specifically which user to delete
+
+            int numOfRowsAffected = deleteStatement.executeUpdate(); //execute the delete and show how many rows have been affected by deleting the user (should be just 1)
+
+            return numOfRowsAffected > 0; //return true if at least one row has been impacted
+        }
     }
 
     public AnchorPane getBooks(Scene mainScene) {

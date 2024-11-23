@@ -45,6 +45,8 @@ public class SidePanel {
             if (selectDefault("BookBetter - Login")) dashboard.getStyleClass().add("selected");
             Button list = new Button("List a book");
             list.getStyleClass().add("sidepanel-button");
+            Button editListing = new Button("Edit listing");
+            editListing.getStyleClass().add("sidepanel-button");
             Button transactions = new Button("Transactions");
             transactions.getStyleClass().add("sidepanel-button");
 
@@ -117,21 +119,29 @@ public class SidePanel {
             Button orderHistory = new Button("Order History");
             orderHistory.getStyleClass().add("sidepanel-button");
 
+            Button cart = new Button("Cart");
+            cart.getStyleClass().add("sidepanel-button");
+
             BuyerView buyerView = new BuyerView(user, sceneController);
 
             browse.setOnAction(e -> {
                 buyerView.setTab("BROWSE");
-                    sceneController.switchScene(buyerView.getScene());
+                sceneController.switchScene(buyerView.getScene());
 
             });
 
             orderHistory.setOnAction(e -> {
                 buyerView.setTab("ORDERS");
-                    sceneController.switchScene(buyerView.getScene());
+                sceneController.switchScene(buyerView.getScene());
 
             });
 
-            generalArea.getChildren().addAll(browse, orderHistory);
+            cart.setOnAction(e -> {
+                buyerView.setTab("CART");
+                sceneController.switchScene(buyerView.getScene());
+
+            });
+            generalArea.getChildren().addAll(browse, orderHistory, cart);
         }
         VBox supportArea = new VBox(10);
         supportArea.setPadding(new Insets(20, 20, 20, 20));
