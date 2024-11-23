@@ -479,6 +479,8 @@ public class SellerView {
 
             // Book details
             VBox detailsForm = new VBox(10);
+            detailsForm.setPadding(new Insets(10));
+            detailsForm.setVisible(false);
 
             // Button action for editing a book
             editButton.setOnAction(e -> {
