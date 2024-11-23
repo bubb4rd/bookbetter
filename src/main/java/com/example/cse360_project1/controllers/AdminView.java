@@ -2,6 +2,9 @@ package com.example.cse360_project1.controllers;
 
 import com.example.cse360_project1.models.Book;
 import com.example.cse360_project1.models.User;
+import com.example.cse360_project1.services.JDBCConnection;
+import com.mysql.cj.xdevapi.Table;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
@@ -9,11 +12,16 @@ import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.input.MouseButton;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
+import javax.swing.event.TableModelListener;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -26,7 +34,9 @@ public class AdminView {
     private final SceneController sceneController;
     private String tab;
 
-    private TableView<User> allUsersTable; //create a private table view
+    private TableView<User> allUsersTable; //create a private users table
+    private TableView<Book> allBooksTable; //create a private books table
+    private TableView<Book> pendingBooksTable;
 
     public AdminView(User user, SceneController sceneController) {
         this.user = user;
@@ -76,14 +86,83 @@ public class AdminView {
         Label titleLabel = new Label("Admin Dashboard");
         titleLabel.getStyleClass().add("h1");
         titleLabel.setPadding(new Insets(20, 20, 20, 20));
-        Label subtitleLabel = new Label("Track and manage all orders");
+        Label subtitleLabel = new Label("Track and manage all Pending Book Listings");
 
-        pane.getChildren().addAll(titleLabel, subtitleLabel);
+        List<Book> pendingBooksList;
+
+        //Create a new book table with only pending books in the table
+        try{
+            Book pendingBooks = new Book(0, "temp", "temp", "temp", "temp", 1);
+            pendingBooksList = pendingBooks.getPendingBooks();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            pendingBooksList = new ArrayList<>();
+        }
+
+        //instantiate the new table for pending books
+        pendingBooksTable = createBookTable(pendingBooksList);
+        pendingBooksTable.setPrefWidth(600);
+        pendingBooksTable.setPrefHeight(500);
+        pendingBooksTable.setEditable(false);
+
+        JDBCConnection newConnection = new JDBCConnection();
+
+        //Create a new simple menu to either activate or deny a book in the system
+        ContextMenu changeBookStatusMenu = new ContextMenu();
+
+        MenuItem activate = new MenuItem("ACTIVATE");
+        MenuItem deny = new MenuItem("DENY");
+
+        changeBookStatusMenu.getItems().addAll(activate, deny);
+
+        //if the activate button is clicked, change the book status to active
+        activate.setOnAction(e -> {
+            Book selectedBook = pendingBooksTable.getSelectionModel().getSelectedItem();
+
+            if(selectedBook != null){
+                int bookID = selectedBook.getId();
+
+                newConnection.updateBookStatus(bookID, "ACTIVE");
+
+                refreshPendingBooksTable();
+            }
+        });
+
+        //if the deny button is clicked, change the book status to reject
+        deny.setOnAction(e -> {
+            Book selectedBook = pendingBooksTable.getSelectionModel().getSelectedItem();
+
+            if(selectedBook != null){
+                int bookID = selectedBook.getId();
+
+                newConnection.updateBookStatus(bookID, "REJECT");
+
+                refreshPendingBooksTable();
+            }
+        });
+
+        //if the admin user right clicks on any row in the table they get the new context menu
+        pendingBooksTable.setOnMouseClicked(event -> {
+            if(event.getButton() == MouseButton.SECONDARY){
+                Book selectedBook = pendingBooksTable.getSelectionModel().getSelectedItem();
+                if(selectedBook != null){
+                    changeBookStatusMenu.show(pendingBooksTable, event.getScreenX(), event.getScreenY());
+                }
+            }
+        });
+
+        //allow the admin user to view all details of pending books when double-clicking on a specific row
+        viewBookDetails(pendingBooksTable);
+
+        pane.getChildren().addAll(titleLabel, subtitleLabel, pendingBooksTable);
         String css = getClass().getResource("/com/example/cse360_project1/css/UserSettings.css").toExternalForm();
         AnchorPane.setTopAnchor(titleLabel, 30.0);
         AnchorPane.setLeftAnchor(titleLabel, 50.0);
         AnchorPane.setTopAnchor(subtitleLabel, 75.0);
         AnchorPane.setLeftAnchor(subtitleLabel, 50.0);
+        AnchorPane.setTopAnchor(pendingBooksTable, 120.0);
+        AnchorPane.setLeftAnchor(pendingBooksTable, 50.0);
+
         pane.getStylesheets().add(css);
         return pane;
     }
@@ -142,6 +221,184 @@ public class AdminView {
 
     }
 
+
+    public AnchorPane getBooks(Scene mainScene) {
+        AnchorPane pane = new AnchorPane();
+        Label titleLabel = new Label("Books");
+        titleLabel.getStyleClass().add("h1");
+        titleLabel.setPadding(new Insets(20, 20, 20, 20));
+        Label subtitleLabel = new Label("View and manage books");
+
+        List<Book> allBooksList;
+
+        //allow the admin user to see all books in the system as long as their status is either active or pending
+        try{
+            Book allBooks = new Book(0, "temp", "temp", "temp", "temp", 1);
+            allBooksList = allBooks.getAllBooks();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            allBooksList = new ArrayList<>();
+        }
+
+        allBooksTable = createBookTable(allBooksList);
+        allBooksTable.setPrefWidth(600);
+        allBooksTable.setPrefHeight(500);
+        allBooksTable.setEditable(false);
+        viewBookDetails(allBooksTable);
+
+        pane.getChildren().addAll(titleLabel, subtitleLabel, allBooksTable);
+        String css = getClass().getResource("/com/example/cse360_project1/css/UserSettings.css").toExternalForm();
+        AnchorPane.setTopAnchor(titleLabel, 30.0);
+        AnchorPane.setLeftAnchor(titleLabel, 50.0);
+        AnchorPane.setTopAnchor(subtitleLabel, 75.0);
+        AnchorPane.setLeftAnchor(subtitleLabel, 50.0);
+        AnchorPane.setTopAnchor(allBooksTable, 120.0);
+        AnchorPane.setLeftAnchor(allBooksTable, 50.0);
+        pane.getStylesheets().add(css);
+        return pane;
+    }
+
+    //Create the Book Table for all books currently in the system
+    private TableView<Book> createBookTable(List<Book> allBookList){
+        TableView<Book> bookTableView = new TableView<>();
+
+        TableColumn<Book, Integer> bookIdColumn = new TableColumn<>("Book ID");
+        bookIdColumn.setCellValueFactory(new PropertyValueFactory<>("id"));
+
+        TableColumn<Book, String> bookNameColumn = new TableColumn<>("Book Name");
+        bookNameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
+
+        TableColumn<Book, String> bookAuthorColumn = new TableColumn<>("Author");
+        bookAuthorColumn.setCellValueFactory(new PropertyValueFactory<>("author"));
+
+        TableColumn<Book, String> bookConditionColumn = new TableColumn<>("Book Condition");
+        bookConditionColumn.setCellValueFactory(new PropertyValueFactory<>("condition"));
+
+        TableColumn<Book, String> bookCategoriesColumn = new TableColumn<>("Book Categories");
+        bookCategoriesColumn.setCellValueFactory(cellData -> {
+            ArrayList<String> bookCategories = cellData.getValue().getCategories();
+            String stringBookCategories = cellData.getValue().stringCategories(bookCategories);
+            String categoriesString = String.join(", ", bookCategories);
+            return new SimpleStringProperty(stringBookCategories);
+        });
+
+        bookTableView.getColumns().addAll(bookIdColumn, bookNameColumn, bookAuthorColumn, bookConditionColumn, bookCategoriesColumn);
+
+        ObservableList<Book> bookData = FXCollections.observableArrayList(allBookList);
+        bookTableView.setItems(bookData);
+
+        return bookTableView;
+    }
+
+
+    //Allow the admin user to click on a book in the system and view further book information
+    private void viewBookDetails(TableView<Book> bookTableView){
+        bookTableView.setRowFactory(e -> {
+            TableRow<Book> currentBookRow = new TableRow<>();
+
+            //check if the admin user clicked on the row twice
+            currentBookRow.setOnMouseClicked(event -> {
+                if(event.getClickCount() == 2 && (!currentBookRow.isEmpty())) {
+                    Book selectedBook = currentBookRow.getItem();
+                    showBookDetails(selectedBook); //show the admin user the detailed book information
+                }
+            });
+            return currentBookRow;
+        });
+    }
+
+    //Show detailed book information when the admin user clicks on a book
+    private void showBookDetails(Book book){
+        Stage stage = new Stage(); // set the stage and stage title
+        stage.setTitle("Book Details");
+
+        //create the title label
+        Label titleLabel = new Label("Book Information: ");
+        titleLabel.setStyle("-fx-font-size: 18px; -fx-font-weight: bold");
+        titleLabel.getStyleClass().add("h2");
+
+        //create the book id section
+        Label idLabel = new Label("ID: ");
+        TextField userID = new TextField();
+        userID.setText(String.valueOf(book.getId()));
+        idLabel.getStyleClass().add("h2");
+        idLabel.setStyle("-fx-font-size: 12px");
+        userID.getStyleClass().add("h2");
+        userID.setEditable(false);
+
+        //create the book image section
+        Image bookImage = new Image(book.getImage().toURI().toString()); //create a new Image using the book file
+        ImageView bookImageView = new ImageView(bookImage); //create a new image view to see the image
+
+        //set the size of the book
+        bookImageView.setFitWidth(200);
+        bookImageView.setFitHeight(200);
+        bookImageView.setPreserveRatio(true);
+
+        //create the book name section
+        Label bookNameLabel = new Label("Book Name: ");
+        TextField bookNameField = new TextField();
+        bookNameField.setText(book.getName());
+        bookNameLabel.getStyleClass().add("h2");
+        bookNameLabel.setStyle("-fx-font-size: 12px");
+        bookNameField.getStyleClass().add("h2");
+        bookNameField.setEditable(false);
+
+        //create the book author section
+        Label bookAuthorLabel = new Label("Book Author: ");
+        TextField bookAuthorField = new TextField();
+        bookAuthorField.setText(book.getName());
+        bookAuthorLabel.getStyleClass().add("h2");
+        bookAuthorLabel.setStyle("-fx-font-size: 12px");
+        bookAuthorField.getStyleClass().add("h2");
+        bookAuthorField.setEditable(false);
+
+        //create the book condition section
+        Label bookConditionLabel = new Label("Book Condition: ");
+        TextField bookConditionField = new TextField();
+        bookConditionField.setText(book.getCondition());
+        bookConditionLabel.getStyleClass().add("h2");
+        bookConditionLabel.setStyle("-fx-font-size: 12px");
+        bookConditionField.getStyleClass().add("h2");
+
+        //create the book categories section
+        Label bookCategoriesLabel = new Label("Book Categories: ");
+        TextField bookCategoriesField = new TextField();
+        bookCategoriesField.setText(book.stringCategories(book.getCategories())); //convert each category list to string
+        bookCategoriesLabel.getStyleClass().add("h2");
+        bookCategoriesLabel.setStyle("-fx-font-size: 12px");
+        bookCategoriesField.getStyleClass().add("h2");
+
+        //Create the book information grid pane and add each above section into the GridPane
+        GridPane bookInformationPane = new GridPane();
+        bookInformationPane.setAlignment(Pos.CENTER);
+        bookInformationPane.setHgap(15);
+        bookInformationPane.setVgap(15);
+
+        bookInformationPane.add(titleLabel, 0, 0);
+
+        bookInformationPane.add(idLabel, 0, 1);
+        bookInformationPane.add(userID, 1, 1);
+
+        bookInformationPane.add(bookImageView, 0, 2);
+
+        bookInformationPane.add(bookNameLabel, 0, 3);
+        bookInformationPane.add(bookNameField, 1, 3);
+
+        bookInformationPane.add(bookAuthorLabel, 0, 4);
+        bookInformationPane.add(bookAuthorField, 1, 4);
+
+        bookInformationPane.add(bookConditionLabel, 0, 5);
+        bookInformationPane.add(bookConditionField, 1, 5);
+
+        bookInformationPane.add(bookCategoriesLabel, 0, 6);
+        bookInformationPane.add(bookCategoriesField, 1, 6);
+
+        Scene scene = new Scene(bookInformationPane, 400, 500); //set the new scene
+        stage.setScene(scene);
+        stage.show();
+    }
+
     //Create the User Table for all users currently in the system
     private TableView<User> createUserTable(List<User> allUserList){
         TableView<User> userTableView = new TableView<>();
@@ -149,16 +406,17 @@ public class AdminView {
         //Create the unique userID column
         TableColumn<User, Integer> idColumn = new TableColumn<>("User ID");
         idColumn.setCellValueFactory(new PropertyValueFactory<>("id"));
+        idColumn.setPrefWidth(25);
 
         //Create the username column
         TableColumn<User, String> usernameColumn = new TableColumn<>("Username");
         usernameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
-        usernameColumn.setPrefWidth(100);
+        usernameColumn.setPrefWidth(200);
 
         //Create the user type column
         TableColumn<User, String> typeColumn = new TableColumn<>("Type");
         typeColumn.setCellValueFactory(new PropertyValueFactory<>("userType"));
-        typeColumn.setPrefWidth(100);
+        typeColumn.setPrefWidth(200);
 
         //add all columns into the table
         userTableView.getColumns().addAll(idColumn, usernameColumn, typeColumn);
@@ -172,8 +430,8 @@ public class AdminView {
     }
 
     //allow the admin user to expand the user information in the table to a new stage
-    private void viewUserDetails(TableView<User> tableView) {
-        tableView.setRowFactory(e -> {
+    private void viewUserDetails(TableView<User> userTableView) {
+        userTableView.setRowFactory(e -> {
             TableRow<User> row = new TableRow<>();
             //if the admin user clicks on a specific row, ensure that the new stage with all user informatino is shown
             row.setOnMouseClicked(event -> {
@@ -186,13 +444,10 @@ public class AdminView {
         });
     }
 
-
+    //show all users in the system
     private void showUserDetails(User user) {
         Stage stage = new Stage();
-        stage.setTitle("User Details"); //Create the User Details Page
-
-        VBox vbox = new VBox(10);
-        vbox.setPadding(new Insets(20));
+        stage.setTitle("User Details");
 
         //Create the main title for the page
         Label titleLabel = new Label("User Information: ");
@@ -316,6 +571,26 @@ public class AdminView {
         }
     }
 
+    //Ensure that once a book is accepted into the system, the pending listings table is adjusted
+    private void refreshPendingBooksTable(){
+        List<Book> updatedPendingBooksList;
+
+        //create a new list of all books in the system that have a status of pending
+        try{
+            Book pendingBooks = new Book(0, "temp", "temp", "temp", "temp", 1);
+            updatedPendingBooksList = pendingBooks.getPendingBooks();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            updatedPendingBooksList = new ArrayList<>();
+        }
+
+        //clear the old table and create the new one with the updated list of pending books
+        if(pendingBooksTable != null){
+            pendingBooksTable.getItems().clear();
+            pendingBooksTable.getItems().addAll(updatedPendingBooksList);
+        }
+    }
+
     //delete the user from the system
     private boolean deleteUser(int userID) throws SQLException{
         String deleteUserQuery = "DELETE FROM users WHERE id = ?"; //delete query for database
@@ -329,23 +604,6 @@ public class AdminView {
 
             return numOfRowsAffected > 0; //return true if at least one row has been impacted
         }
-    }
-
-    public AnchorPane getBooks(Scene mainScene) {
-        AnchorPane pane = new AnchorPane();
-        Label titleLabel = new Label("Books");
-        titleLabel.getStyleClass().add("h1");
-        titleLabel.setPadding(new Insets(20, 20, 20, 20));
-        Label subtitleLabel = new Label("View and manage books");
-
-        pane.getChildren().addAll(titleLabel, subtitleLabel);
-        String css = getClass().getResource("/com/example/cse360_project1/css/UserSettings.css").toExternalForm();
-        AnchorPane.setTopAnchor(titleLabel, 30.0);
-        AnchorPane.setLeftAnchor(titleLabel, 50.0);
-        AnchorPane.setTopAnchor(subtitleLabel, 75.0);
-        AnchorPane.setLeftAnchor(subtitleLabel, 50.0);
-        pane.getStylesheets().add(css);
-        return pane;
     }
 
     public void setTab(String tab) {

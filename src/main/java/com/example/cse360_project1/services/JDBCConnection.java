@@ -379,4 +379,21 @@ public class JDBCConnection {
         tableView.setItems(transactions);
         return tableView;
     }
+
+    public boolean updateBookStatus(int bookID, String status){
+        String updateStatusQuery = "UPDATE books SET book_status = ? WHERE book_id = ?"; //query to update book status
+
+        try  (Connection connection = getConnection(); PreparedStatement preparedStatement = connection.prepareStatement(updateStatusQuery)){
+            preparedStatement.setString(1, status);
+            preparedStatement.setInt(2, bookID);
+
+            int rowsUpdated = preparedStatement.executeUpdate();
+
+            return rowsUpdated > 0;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
 }
