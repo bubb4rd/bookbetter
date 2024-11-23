@@ -448,9 +448,17 @@ public class SellerView {
         titleLabel.setStyle("-fx-font-size: 24px; -fx-font-weight: bold;");
         titleLabel.setPadding(new Insets(20));
 
-        VBox contentBox = new VBox();
-        contentBox.setPadding(new Insets(20, 20, 20, 20));
-        contentBox.getStyleClass().add("blurb");
+        //Book list
+        VBox bookListBox = new VBox(10);
+        bookListBox.setPadding(new Insets(20));
+        bookListBox.setSpacing(10);
+        Label selectBookLabel = new Label("Select a Book");
+        selectBookLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
+//      bookListBox.getChildren().addAll(selectBookLabel, bookListView, editButton);
+
+//        VBox contentBox = new VBox();
+//        contentBox.setPadding(new Insets(10, 10, 10, 10));
+//        contentBox.getStyleClass().add("blurb");
 
         //Get the user's listed books
         JDBCConnection jdbcConnection = new JDBCConnection();
