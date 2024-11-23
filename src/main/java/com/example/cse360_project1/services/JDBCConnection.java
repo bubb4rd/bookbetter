@@ -143,27 +143,68 @@ public class JDBCConnection {
                     collectionIds.add(rs.getInt("collection_id"));
                 }
 
-                    FileInputStream inputStream = new FileInputStream(book.getImage());
-                    PreparedStatement preparedStatement = connection.prepareStatement(query);
-                    preparedStatement.setInt(1, book.getCollectionID());
-                    preparedStatement.setString(2, book.getAuthor());
-                    preparedStatement.setString(3, book.getName());
-                    preparedStatement.setString(4, book.getCondition());
-                    preparedStatement.setString(5, book.categoriesToJSON(book.getCategories()));
-                    preparedStatement.setBinaryStream(6, inputStream, (int) book.getImage().length());
-                    preparedStatement.setString(7, book.getDate());
-                    System.out.println(preparedStatement);
-                    int newRowsInserted = preparedStatement.executeUpdate();
-                    if (newRowsInserted > 0) return true;
-                } catch (Exception e) {
-                    e.printStackTrace();
+                // Handle case where no collection_id exists
+                int collectionId;
+                if (collectionIds.isEmpty()) {
+                    System.out.println("No collection_id found for user_id: " + book.getCollectionID());
+                    // Create a new collection_id for the user
+                    String createQuery = "INSERT INTO book_collections (user_id) VALUES (?)";
+                    PreparedStatement createStatement = currentConnection.prepareStatement(createQuery, Statement.RETURN_GENERATED_KEYS);
+                    createStatement.setInt(1, book.getCollectionID());
+                    createStatement.executeUpdate();
+
+                    // Retrieve the generated collection_id
+                    ResultSet generatedKeys = createStatement.getGeneratedKeys();
+                    if (generatedKeys.next()) {
+                        collectionId = generatedKeys.getInt(1);
+                        System.out.println("Created new collection_id: " + collectionId);
+                    } else {
+                        System.err.println("Failed to create a new collection_id.");
+                        return false;
+                    }
+                } else {
+                    // If multiple collection_ids exist, delete all but the first
+                    collectionId = collectionIds.get(0); // Keep the first (smallest) collection_id
+                    for (int i = 1; i < collectionIds.size(); i++) {
+                        int collectionIdToDelete = collectionIds.get(i);
+
+                        // Check if the collection_id is referenced in the books table
+                        String referenceCheckQuery = "SELECT COUNT(*) FROM books WHERE collection_id = ?";
+                        PreparedStatement referenceCheckStatement = currentConnection.prepareStatement(referenceCheckQuery);
+                        referenceCheckStatement.setInt(1, collectionIdToDelete);
+                        ResultSet referenceResult = referenceCheckStatement.executeQuery();
+
+                        if (referenceResult.next() && referenceResult.getInt(1) == 0) {
+                            // Safe to delete if not referenced
+                            String deleteQuery = "DELETE FROM book_collections WHERE collection_id = ?";
+                            PreparedStatement deleteStatement = currentConnection.prepareStatement(deleteQuery);
+                            deleteStatement.setInt(1, collectionIdToDelete);
+                            deleteStatement.executeUpdate();
+                            System.out.println("Deleted collection_id: " + collectionIdToDelete);
+                        } else {
+                            System.out.println("collection_id " + collectionIdToDelete + " is referenced in the books table and cannot be deleted.");
+                        }
+                    }
                 }
+
+                // Insert the book with the determined collection_id
+                String query = "INSERT INTO books (collection_id, book_author, book_name, book_condition, book_categories, book_image, date) " +
+                        "VALUES (?, ?, ?, ?, CAST(? AS JSON), ?, ?)";
+                PreparedStatement preparedStatement = currentConnection.prepareStatement(query);
+                preparedStatement.setInt(1, collectionId);
+                preparedStatement.setString(2, book.getAuthor());
+                preparedStatement.setString(3, book.getName());
+                preparedStatement.setString(4, book.getCondition());
+                preparedStatement.setString(5, book.categoriesToJSON(book.getCategories()));
+                preparedStatement.setBinaryStream(6, new FileInputStream(book.getImage()), (int) book.getImage().length());
+                preparedStatement.setString(7, book.getDate());
+                return preparedStatement.executeUpdate() > 0;
+            } catch (SQLException | FileNotFoundException e) {
+                e.printStackTrace();
+                return false;
             }
-        } catch (Exception e) {
-            e.printStackTrace();
         }
-        return false;
-    }
+
     public User getUser(String username) throws SQLException {
         fetchQuery("SELECT * FROM users WHERE username=" + username);
         if (result.next()) {
