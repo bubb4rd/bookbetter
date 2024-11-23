@@ -179,9 +179,6 @@ public class Book {
 
         return books;
     }
-    public void setPrice(double price) {
-        this.price = price;
-    }
 
     public boolean saveBookToDatabase() {
         final String JDBC_URL = "jdbc:mysql://bookbetter-aws.czoua2woyqte.us-east-2.rds.amazonaws.com:3306/user";
