@@ -222,8 +222,6 @@ public class SellerView {
         conditionCombo.setOnAction(e -> {
             try {
                 String ogPriceText = ogPriceInput.getText().trim();
-                System.out.println("Original Price Input: " + ogPriceText);
-                double ogPrice = Double.parseDouble(ogPriceInput.getText());
                 String conditionValue = conditionCombo.getValue();
 
                 // Validate price and condition
