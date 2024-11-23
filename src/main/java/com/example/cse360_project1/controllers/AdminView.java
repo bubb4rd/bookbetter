@@ -23,6 +23,7 @@ import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
 import javax.swing.event.TableModelListener;
+import java.io.File;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -41,6 +42,8 @@ public class AdminView {
     private static final String USERS_CACHE_KEY = "admin_users";
     private static final String BOOKS_CACHE_KEY = "admin_books";
     private static final String TRANSACTIONS_CACHE_KEY = "admin_transactions";
+
+    private JDBCConnection newConnection = new JDBCConnection();
     public AdminView(User user, SceneController sceneController) {
         this.user = user;
         this.sceneController = sceneController;
@@ -104,9 +107,11 @@ public class AdminView {
 
         //instantiate the new table for pending books
         pendingBooksTable = createBookTable((ObservableList<Book>) pendingBooksList);
-        pendingBooksTable.setPrefWidth(600);
-        pendingBooksTable.setPrefHeight(500);
+        pendingBooksTable.setPrefWidth(1000);
+        pendingBooksTable.setPrefHeight(650);
+        pendingBooksTable.setStyle("fx-background-color: #fff");
         pendingBooksTable.setEditable(false);
+        pendingBooksTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
         JDBCConnection newConnection = new JDBCConnection();
 
@@ -202,6 +207,7 @@ public class AdminView {
 
         try{
             User allUsers = new User(0, "allUsers", "admin", "1234"); //create a new temporary user
+            invalidateUsersCache();
             allUsersList = allUsers.getAllUsers(cacheManager, USERS_CACHE_KEY); //get all users from the system database
         } catch (SQLException e) { //check for any errors when getting all users in the system
             e.printStackTrace();
@@ -210,9 +216,11 @@ public class AdminView {
 
         //Create the new table
         allUsersTable = createUserTable(allUsersList);
-        allUsersTable.setPrefWidth(600);
-        allUsersTable.setPrefHeight(500);
+        allUsersTable.setPrefWidth(1000);
+        allUsersTable.setPrefHeight(650);
+        allUsersTable.setStyle("fx-background-color: #fff");
         allUsersTable.setEditable(false);
+        allUsersTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         viewUserDetails(allUsersTable);
 
         pane.getChildren().addAll(titleLabel, subtitleLabel, allUsersTable);
@@ -239,9 +247,11 @@ public class AdminView {
         ObservableList<Book> allBooksList = JDBCConnection.fetchAllBooksFromDatabase();
 
         allBooksTable = createBookTable(allBooksList);
-        allBooksTable.setPrefWidth(600);
-        allBooksTable.setPrefHeight(500);
+        allBooksTable.setPrefWidth(1000);
+        allBooksTable.setPrefHeight(650);
+        allBooksTable.setStyle("fx-background-color: #fff");
         allBooksTable.setEditable(false);
+        allBooksTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         viewBookDetails(allBooksTable);
 
         pane.getChildren().addAll(titleLabel, subtitleLabel, allBooksTable);
@@ -325,8 +335,11 @@ public class AdminView {
         userID.getStyleClass().add("h2");
         userID.setEditable(false);
 
-        //create the book image section
-        Image bookImage = new Image(book.getImage().toURI().toString()); //create a new Image using the book file
+        JDBCConnection newConnection = new JDBCConnection();
+
+        File newBookImage = newConnection.fetchBookImage(book.getId());
+
+        Image bookImage = new Image(newBookImage.toURI().toString()); //create a new Image using the book file
         ImageView bookImageView = new ImageView(bookImage); //create a new image view to see the image
 
         //set the size of the book
@@ -499,26 +512,28 @@ public class AdminView {
             //Check if the admin user confirms they want to remove the user
             removeUserConfirmation.showAndWait().ifPresent(response -> {
                 if(response == ButtonType.OK) {
+
+                    boolean isUserDeleted = false; //check if the user has been successfully deleted
                     try {
-                        boolean isUserDeleted = deleteUser(user.getId()); //check if the user has been successfully deleted
+                        isUserDeleted = deleteUser(user.getId());
+                    } catch (SQLException ex) {
+                        throw new RuntimeException(ex);
+                    }
 
-                        if (isUserDeleted) { //indicate that user has been deleted to the admin user
-                            Alert deletedUserAlert = new Alert(Alert.AlertType.INFORMATION);
-                            deletedUserAlert.setTitle("SUCCESSFUL REMOVAL");
-                            deletedUserAlert.setHeaderText("USER HAS BEEN REMOVED");
-                            deletedUserAlert.setContentText("The user has been removed from the system successfully");
-                            deletedUserAlert.showAndWait();
+                    if (isUserDeleted) { //indicate that user has been deleted to the admin user
+                        Alert deletedUserAlert = new Alert(Alert.AlertType.INFORMATION);
+                        deletedUserAlert.setTitle("SUCCESSFUL REMOVAL");
+                        deletedUserAlert.setHeaderText("USER HAS BEEN REMOVED");
+                        deletedUserAlert.setContentText("The user has been removed from the system successfully");
+                        deletedUserAlert.showAndWait();
 
-                            refreshUserTable();
-                        } else { //indicate that the user has NOT been deleted to the admin user
-                            Alert didNotDeleteUserAlert = new Alert(Alert.AlertType.ERROR);
-                            didNotDeleteUserAlert.setTitle("FAILED REMOVAL");
-                            didNotDeleteUserAlert.setHeaderText("USER HAS NOT BEEN REMOVED");
-                            didNotDeleteUserAlert.setContentText("The user has not been removed from the system successfully");
-                            didNotDeleteUserAlert.showAndWait();
-                        }
-                    } catch (SQLException ex) { //catch any errors here
-                        ex.printStackTrace();
+                        refreshUserTable();
+                    } else { //indicate that the user has NOT been deleted to the admin user
+                        Alert didNotDeleteUserAlert = new Alert(Alert.AlertType.ERROR);
+                        didNotDeleteUserAlert.setTitle("FAILED REMOVAL");
+                        didNotDeleteUserAlert.setHeaderText("USER HAS NOT BEEN REMOVED");
+                        didNotDeleteUserAlert.setContentText("The user has not been removed from the system successfully");
+                        didNotDeleteUserAlert.showAndWait();
                     }
                 }
             });
@@ -602,6 +617,7 @@ public class AdminView {
             deleteStatement.setInt(1, userID); //set the parameters of the statement, more specifically which user to delete
 
             int numOfRowsAffected = deleteStatement.executeUpdate(); //execute the delete and show how many rows have been affected by deleting the user (should be just 1)
+            invalidateUsersCache();
 
             return numOfRowsAffected > 0; //return true if at least one row has been impacted
         }

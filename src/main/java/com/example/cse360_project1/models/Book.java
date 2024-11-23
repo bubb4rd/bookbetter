@@ -160,7 +160,7 @@ public class Book {
 
         try(PreparedStatement statement = connection.prepareStatement(bookQuery); ResultSet rs = statement.executeQuery()) { //query to get only books in Pending
             while(rs.next()){
-                books.add(new Book(rs.getInt("book_id"), rs.getString("book_name"), rs.getString("book_author"), rs.getString("book_condition"), rs.getString("book_categories"), rs.getInt("collection_id"), getSpecificBookImage(rs.getInt("book_id"))));
+                books.add(new Book(rs.getInt("book_id"), rs.getString("book_name"), rs.getString("book_author"), rs.getString("book_condition"), rs.getString("book_categories"), rs.getInt("collection_id")));
             }
         }
 
