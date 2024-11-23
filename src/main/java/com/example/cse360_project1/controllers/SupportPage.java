@@ -48,7 +48,72 @@ public class SupportPage {
         supportLabel.getStyleClass().add("h1");
         supportLabel.setPadding(new Insets(20, 20, 20, 20));
 
-        pane.getChildren().addAll(supportLabel);
+        VBox formBox = new VBox(15);
+        formBox.setPadding(new Insets(20));
+        formBox.setStyle("-fx-background-color: #f9f9f9; -fx-border-color: #ddd; -fx-border-radius: 8; -fx-background-radius: 8;");
+
+        //email field
+        Label emailLabel = new Label("Email");
+        emailLabel.getStyleClass().add("h3");
+        TextField emailField = new TextField();
+        emailField.setPromptText("Enter your email");
+
+        //ID field
+        Label userIdLabel = new Label("User ID");
+        userIdLabel.getStyleClass().add("h3");
+        TextField userIdField = new TextField();
+        userIdField.setPromptText("Enter your user ID");
+
+        //FAQs
+        Label topicLabel = new Label("Help Topic");
+        topicLabel.getStyleClass().add("h3");
+        ComboBox<String> topicDropdown = new ComboBox<>();
+        topicDropdown.getItems().addAll(
+                "Technical Issue",
+                "Billing Inquiry",
+                "Account Issue",
+                "Other"
+        );
+
+        topicDropdown.setPromptText("Please select a topic");
+
+        //Problem description field
+        Label additionalInfoLabel = new Label("Additional Information");
+        additionalInfoLabel.getStyleClass().add("h3");
+        TextArea additionalInfoField = new TextArea();
+        additionalInfoField.setPromptText("Please provide any additional information about your problem here");
+        additionalInfoField.setPrefHeight(100);
+        //Submit form button
+        Button submitButton = new Button("Submit Form");
+        submitButton.getStyleClass().add("primary");
+        submitButton.setOnAction(e ->{
+            String email = emailField.getText();
+            String userId = userIdField.getText();
+            String topic = topicDropdown.getValue();
+            String additionalInfo = additionalInfoField.getText();
+
+            if (email.isEmpty() || userId.isEmpty() || topic == null || additionalInfo.isEmpty()) {
+                Error emptyFieldError = new Error("Please fill in all fields");
+                emptyFieldError.displayError(pane, mainScene);
+            }
+            else{
+                Error successError = new Error("Support Form Submitted");
+                successError.displayError(pane, mainScene);
+                emailField.clear();
+                userIdField.clear();
+                topicDropdown.setValue(null);
+                additionalInfoField.clear();
+            }
+        });
+        formBox.getChildren().addAll(
+                emailLabel, emailField,
+                userIdLabel, userIdField,
+                topicLabel, topicDropdown,
+                additionalInfoLabel, additionalInfoField,
+                submitButton
+        );
+
+        pane.getChildren().addAll(supportLabel, formBox);
         String css = getClass().getResource("/com/example/cse360_project1/css/UserSettings.css").toExternalForm();
         AnchorPane.setTopAnchor(supportLabel, 30.0);
         AnchorPane.setLeftAnchor(supportLabel, 50.0);
