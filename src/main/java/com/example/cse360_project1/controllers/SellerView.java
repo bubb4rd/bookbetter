@@ -346,6 +346,9 @@ public class SellerView {
                    double ogPrice = Double.parseDouble(ogPriceInput.getText());
                    double newPrice = calculateNewPrice(ogPrice, bookCondition);
 
+                   Book newBook = new Book(user.getId(), bookName, bookAuthor, bookCondition, bookCategories, user.getId(), imageFile.get());
+                   newBook.setPrice(newPrice);
+
                    JDBCConnection connection = new JDBCConnection();
                    if (connection.addBook(newBook)) {
                        System.out.println("Book added: " + newBook.getName());
