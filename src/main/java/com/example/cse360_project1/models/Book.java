@@ -16,10 +16,10 @@ public class Book {
     private ArrayList<String> categories;
     private int collectionID;
     private double price;
+    private double ogPrice;
+    private double newPrice;
     private File image;
     private String date;
-
-
 
     public Book(int id, String name, String author, String condition, String categoriesJSON, int collectionID) {
         LocalDate today = LocalDate.now();
@@ -38,7 +38,7 @@ public class Book {
             case "Heavily Used" -> this.price = 10.50;
         }
     }
-    public Book(int id, String name, String author, String condition, String categoriesJSON, int collectionID, File image) {
+    public Book(int id, String name, String author, String condition, String categoriesJSON, /*double ogPrice, double newPrice,*/ int collectionID, File image) {
         this.id = id;
         this.name = name;
         this.author = author;
@@ -48,12 +48,13 @@ public class Book {
         this.image = image;
         LocalDate today = LocalDate.now();
         this.date = today.toString();
+        this.image = null;
 
-        switch (condition) {
-            case "New" -> this.price = 10.50 * 2;
-            case "Used" -> this.price = 10.50 * 1.5;
-            case "Heavily Used" -> this.price = 10.50;
-        }
+//        switch (condition) {
+//            case "New" -> this.price = 10.50 * 2;
+//            case "Used" -> this.price = 10.50 * 1.5;
+//            case "Heavily Used" -> this.price = 10.50;
+//        }
     }
     public int getId() {
         return id;
@@ -98,11 +99,11 @@ public class Book {
         categories.remove(category);
     }
     public String stringCategories(ArrayList<String> categories) {
-        String categoriesString = "";
+        String categoriesString = "Categories: ";
         for (String category : categories) {
             categoriesString += category + ", ";
         }
-        if (categoriesString.equals("")) categoriesString = "Categories: None";
+        if (categoriesString.equals("Categories: ")) categoriesString = "Categories: None";
         return categoriesString;
     }
 
@@ -271,7 +272,7 @@ public class Book {
 
     @Override
     public String toString() {
-        return name + ", " + author + ", " + price;
+        return name + ", $" + price + " " + author + " " + condition + " " + stringCategories(categories);
     }
 
 }
