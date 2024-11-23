@@ -506,7 +506,7 @@ public class SellerView {
         return pane;
     }
 
-    private void populatedEditForm(VBox detailsForm, Book book, JDBCConnection jdbcConnection) {
+    private void populatedEditForm(AnchorPane parentPane, VBox detailsForm, Book book, JDBCConnection jdbcConnection) {
         detailsForm.getChildren().clear();
 
         //Name of book
