@@ -220,7 +220,7 @@ public class SellerView {
 
         Label newPriceLabel = new Label("Calculated Price: $0.00");
         conditionCombo.setOnAction(e -> {
-            try{
+            try {
                 String ogPriceText = ogPriceInput.getText().trim();
                 System.out.println("Original Price Input: " + ogPriceText);
                 double ogPrice = Double.parseDouble(ogPriceInput.getText());
