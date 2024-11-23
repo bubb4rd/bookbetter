@@ -18,7 +18,7 @@ public class SupportPage {
     }
     public Scene getScene() {
         Scene mainScene = sceneController.getCurrentScene();
-        sceneController.getStage().setTitle("BookBetter - Seller");
+        sceneController.getStage().setTitle("BookBetter - Support");
         AnchorPane root = new AnchorPane();
 
 //        HBox pieChartBox = categoriesPieChart(user);
