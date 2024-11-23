@@ -461,6 +461,7 @@ public class SellerView {
 //        contentBox.getStyleClass().add("blurb");
 
         //Get the user's listed books
+        ListView<Book> bookListView = new ListView<>();
         JDBCConnection jdbcConnection = new JDBCConnection();
         ArrayList<Book> userBooks = jdbcConnection.getBookCollection(user);
         //If user does not have books listed
