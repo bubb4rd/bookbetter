@@ -216,7 +216,6 @@ public class SellerView {
         ComboBox<String> conditionCombo = new ComboBox();
         conditionCombo.getStyleClass().addAll("gray-border", "text-lg", "input");
         conditionCombo.setValue("Choose Book Condition");
-        conditionCombo.getItems().addAll("Lightly used", "Moderately used", "Heavily used ");
         conditionCombo.getItems().addAll("Lightly Used", "Moderately Used", "Heavily Used ");
 
         Label newPriceLabel = new Label("Calculated Price: $0.00");
