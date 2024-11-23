@@ -248,7 +248,11 @@ public class JDBCConnection {
             preparedStatement.setString(3, book.getName());
             preparedStatement.setString(4, book.getCondition());
             preparedStatement.setString(5, book.categoriesToJSON(book.getCategories()));
-            preparedStatement.setBinaryStream(6, new FileInputStream(book.getImage()), (int) book.getImage().length());
+            if (book.getImage() != null && book.getImage().exists()) {
+                preparedStatement.setBinaryStream(6, new FileInputStream(book.getImage()), (int) book.getImage().length());
+            } else {
+                preparedStatement.setNull(6, Types.BLOB);
+            }
             preparedStatement.setString(7, book.getDate());
             cacheManager.clear(ALL_BOOKS_CACHE_KEY);
             return preparedStatement.executeUpdate() > 0;
