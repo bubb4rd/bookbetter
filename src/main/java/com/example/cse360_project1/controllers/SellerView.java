@@ -352,38 +352,17 @@ public class SellerView {
         };
     }
 
-        ToggleButton artButton = new ToggleButton("Art");
-        artButton.getStyleClass().add("toggle-button");
-        allCategories.add(artButton);
-
-        ToggleButton novelButton = new ToggleButton("Novel");
-        novelButton.getStyleClass().add("toggle-button");
-        allCategories.add(novelButton);
-
-        for (ToggleButton button: allCategories) {
-            button.setOnAction(e -> {
-                if (button.isSelected()) {
-                    selectedCategories.add(button.getText());
-                }
-                else {
-                    selectedCategories.remove(button.getText());
-
-                }
-            });
+    private boolean isValidDouble(String text) {
+        if (text == null || text.trim().isEmpty()) {
+            return false;
         }
-        VBox categories = new VBox();
-        categories.setSpacing(5);
-        Label categoriesLabel = new Label("Categories");
-        categoriesLabel.getStyleClass().add("h3");
-        HBox categoriesBox1 = new HBox(10, natScienceButton, computerButton);
-        HBox categoriesBox2 = new HBox(10, mathButton, englishLangButton);
-        HBox categoriesBox3 = new HBox(10, scifiButton, artButton, novelButton);
-        categories.getChildren().addAll(categoriesLabel, categoriesBox1, categoriesBox2, categoriesBox3);
-
-        Button submitButton = new Button("List your book");
-        submitButton.getStyleClass().add("h3");
-        submitButton.getStyleClass().add("button");
-        submitButton.setStyle("-fx-pref-width: 300px; -fx-background-color: #640000; -fx-text-fill: white; -fx-pref-height: 50px;");
+        try {
+            double value = Double.parseDouble(text);
+            return value >= 0.0; // Ensures the number is non-negative
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
 
         HBox submitArea = new HBox();
         submitArea.setPadding(new Insets(20, 20, 20, 20));
