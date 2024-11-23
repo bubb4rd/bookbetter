@@ -265,7 +265,7 @@ public class SellerView {
         conditionCombo.getStyleClass().addAll("gray-border", "text-lg", "input");
 
 
-        conditionCombo.setValue("Choose Account Type");
+        conditionCombo.setValue("Choose Book Condition");
         conditionCombo.getItems().addAll("Lightly used", "Moderately used", "Heavily used ");
 
         Button chooseImageButton = new Button("Choose Image + ");
