@@ -374,7 +374,7 @@ public class SellerView {
                Error imageError = new Error("Submit error: Image failed");
                imageError.displayError(pane, mainScene);
            } else {
-               Book newBook = new Book( user.getId(), bookName, bookAuthor, bookCondition, bookCategories, user.getId());
+               Book newBook = new Book(user.getId(), bookName, bookAuthor, bookCondition, bookCategories, user.getId(), imageFile.get());
                JDBCConnection connection = new JDBCConnection();
                if (connection.addBook(newBook)) {
                    System.out.println("Book added: " + newBook.getName());
