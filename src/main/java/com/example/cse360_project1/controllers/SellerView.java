@@ -366,7 +366,10 @@ public class SellerView {
     }
 
     private double calculateNewPrice(double ogPrice, String bookCondition) {
-        return switch (bookCondition){
+        bookCondition = bookCondition.trim();
+        System.out.println("Condition: '" + bookCondition + "'");
+
+        return switch (bookCondition) {
             case "Heavily Used" -> ogPrice * 0.5;
             case "Moderately Used" -> ogPrice * 0.75;
             case "Lightly Used" -> ogPrice * 0.9;
